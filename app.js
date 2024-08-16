@@ -3,9 +3,9 @@ var express = require("express");
 var path = require("path");
 var cookieParser = require("cookie-parser");
 var logger = require("morgan");
-const mongoose = require("mongoose");
 var cors = require("cors");
-//middleware
+const dotenv = require("dotenv");
+const { mongodbConnection } = require("./connection");
 const { authentication } = require("./middleware/auth");
 
 // Routes Import
@@ -18,8 +18,7 @@ const leaveUpdateRouter = require("./routes/receive_leave");
 
 var app = express();
 //Mongoose Connection
-mongoose
-  .connect("mongodb://localhost:27017/LMS")
+mongodbConnection("mongodb://localhost:27017/LMS")
   .then(() => {
     console.log("Connection Successfully");
   })
@@ -41,6 +40,7 @@ app.set("views", path.join(__dirname, "views"));
 app.set("view engine", "jade");
 // middleware
 app.use(logger("dev"));
+dotenv.config();
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 app.use(cookieParser());
