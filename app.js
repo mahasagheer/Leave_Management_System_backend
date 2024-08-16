@@ -19,7 +19,7 @@ const leaveUpdateRouter = require("./routes/receive_leave");
 var app = express();
 //Mongoose Connection
 mongoose
-  .connect("mongodb://localhost:27017/LMS")
+  .connect("mongodb+srv://skillconnection:skillconnection123@skill-connection.qwcftsr.mongodb.net/LMS")
   .then(() => {
     console.log("Connection Successfully");
   })

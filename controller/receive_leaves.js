@@ -66,4 +66,26 @@ async function UserMessages(req, res) {
     res.status(500).json({ msg: "Unable to get single ser messages" });
   }
 }
-module.exports = { AddEmployeeLeaveDetail, updateLeaveDetail, UserMessages };
+async function UserMessagesForHR(req, res) {
+  try {
+
+    const matchStage = req.params.status !== "All" 
+      ? { $match: { "messages.status": req.params.status } } 
+      : {}; 
+
+    const pipeline = [
+      { $unwind: "$messages" }, 
+      ...(req.params.status !== "All" ? [matchStage] : []), 
+ 
+    ];
+
+    const messages = await EmployeeLeaves.aggregate(pipeline).exec();
+    res.status(200).json(messages);
+    
+  } catch (error) {
+    console.error("Error fetching messages:", error);
+    throw error;
+  }
+}
+
+module.exports = { AddEmployeeLeaveDetail, updateLeaveDetail, UserMessages , UserMessagesForHR };
