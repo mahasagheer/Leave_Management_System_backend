@@ -1,9 +1,13 @@
 const crypto = require("crypto-js");
 
 const User = require("../modal/user");
+<<<<<<< HEAD
 const Leave = require("../modal/leave_balance");
 const EmployeeLeaves = require("../modal/receive_leaves");
 const key = "sikfm%$90is";
+=======
+const { encrypt_key } = require("../config");
+>>>>>>> 80d0466574473c44f611bcb83c62ec716a1d184b
 
 async function addUser(req, res) {
   const {
@@ -89,7 +93,7 @@ async function updateUser(req, res) {
       email,
       password,
     } = req.body;
-    const encrypted = crypto.AES.encrypt(password, key).toString();
+    const encrypted = crypto.AES.encrypt(password, encrypt_key).toString();
 
     const update = await User.findByIdAndUpdate(req.params.id, req.body, { new: true });
 

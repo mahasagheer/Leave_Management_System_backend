@@ -1,6 +1,7 @@
-const nodemailer = require("nodemailer");
 const Leave = require("../modal/leave_balance");
 const EmployeeLeaves = require("../modal/receive_leaves");
+const { user_email, to, url } = require("../config");
+const { emailConnection } = require("../connection");
 
 async function sendLeave(req, res) {
   try {
@@ -13,19 +14,10 @@ async function sendLeave(req, res) {
       from_date,
       leave_application,
     } = req.body;
-    const transporter = nodemailer.createTransport({
-      host: "smtp.gmail.email",
-      service: "gmail",
-      port: 587,
-      auth: {
-        user: "mahasagheer960@gmail.com",
-        pass: "qyiy geur nspl zgrb",
-      },
-    });
-
+    const transporter = await emailConnection();
     const info = await transporter.sendMail({
-      from: `${name} <${email}>`, // sender address
-      to: "iqrasaghir360@gmail.com", // list of receivers
+      from: `${name} <${user_email}>`, // sender address
+      to: `${to}`, // list of receivers
       subject: `Leave Application from ${name} `, // Subject line
       text: `Leave Type : ${leave_type}
        From: ${from_date}
@@ -44,15 +36,8 @@ async function sendLeave(req, res) {
 async function leaveReply(req, res) {
   try {
     const { name, email, comment, employee_id, status } = req.body;
-    const transporter = nodemailer.createTransport({
-      host: "smtp.gmail.email",
-      service: "gmail",
-      port: 587,
-      auth: {
-        user: "mahasagheer960@gmail.com",
-        pass: "qyiy geur nspl zgrb",
-      },
-    });
+    const transporter = await emailConnection();
+
     if (status === "Approved") {
       console.log(employee_id);
       const leave = await Leave.updateOne(
@@ -61,18 +46,18 @@ async function leaveReply(req, res) {
       );
 
       const info = await transporter.sendMail({
-        from: `${name} <mahasagheer960@gmail.com>`, // sender address
-        to: "iqrasaghir360@gmail.com", // list of receivers
+        from: `${name} <${user_email}>`, // sender address
+        to: `${to}`, // list of receivers
         subject: `Leave ${status} `, // Subject line
         text: `Hello ${name}!
 
-      Hope you are doing well.
+         Hope you are doing well.
 
-      Your recent leave request has been reviewed, and after careful consideration, it has been approved, and you are free to take the requested days off.${comment}
-      Please let us know if you require any further clarification, and feel free to reach out if you have any other concerns. Thank you for your understanding.
+         Your recent leave request has been reviewed, and after careful consideration, it has been approved, and you are free to take the requested days off.${comment}
+         Please let us know if you require any further clarification, and feel free to reach out if you have any other concerns. Thank you for your understanding.
      
-      Best Regards,
-      Iqra Sagheer`, // plain text body
+         Best Regards,
+         Iqra Sagheer`, // plain text body
       });
       console.log("Message sent: %s", info.messageId);
     }
@@ -82,19 +67,19 @@ async function leaveReply(req, res) {
         { $inc: { pending_leave: -1, rejected_leave: 1 } }
       );
       const info = await transporter.sendMail({
-        from: `${name} <mahasagheer960@gmail.com>`, // sender address
-        to: "iqrasaghir360@gmail.com", // list of receivers
+        from: `${name} <${user_email}>`, // sender address
+        to: `${to}`, // list of receivers
         subject: `Leave ${status} `, // Subject line
         text: `Hello ${name}!
 
-      Hope you are doing well.
+         Hope you are doing well.
 
-      Your recent leave request has been reviewed, and after careful consideration. Unfortunately, it has been declined due to current operational needs.${comment}
+         Your recent leave request has been reviewed, and after careful consideration. Unfortunately, it has been declined due to current operational needs.${comment}
       
-      Please let us know if you require any further clarification, and feel free to reach out if you have any other concerns. Thank you for your understanding.
+         Please let us know if you require any further clarification, and feel free to reach out if you have any other concerns. Thank you for your understanding.
      
-      Best Regards,
-      Iqra Sagheer`, // plain text body
+         Best Regards,
+         Iqra Sagheer`, // plain text body
       });
       console.log("Message sent: %s", info.messageId);
     }
@@ -107,32 +92,25 @@ async function leaveReply(req, res) {
 async function inviteEmployee(req, res) {
   try {
     const { name, email, password } = req.body;
-    const transporter = nodemailer.createTransport({
-      host: "smtp.gmail.email",
-      service: "gmail",
-      port: 587,
-      auth: {
-        user: "mahasagheer960@gmail.com",
-        pass: "qyiy geur nspl zgrb",
-      },
-    });
+    const transporter = await emailConnection();
+
     const info = await transporter.sendMail({
-      from: `${name} <mahasagheer960@gmail.com>`, // sender address
-      to: "iqrasaghir360@gmail.com", // list of receivers
+      from: `${name} <${user_email}>`, // sender address
+      to: `${to}`, // list of receivers
       subject: `Welcome to the Team! `, // Subject line
       text: `Dear ${name},
 
-Welcome aboard! We are thrilled to have you as a part of our team.
+      Welcome aboard! We are thrilled to have you as a part of our team.
 
-To get started, please log in to your account using the following credentials:
+      To get started, please log in to your account using the following credentials:
 
-Email: ${email}
-Password: ${password}
+      Email: ${email}
+      Password: ${password}
 
-You can access the portal using this URL: http://localhost:5173/login
+      You can access the portal using this URL: ${url}
 
-If you have any questions or need assistance, feel free to reach out. We look forward to working with you!
-Best Regards,
+      If you have any questions or need assistance, feel free to reach out. We look forward to working with you!
+      Best Regards,
       Iqra Sagheer`, // plain text body
     });
     console.log("Message sent: %s", info.messageId);

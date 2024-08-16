@@ -3,14 +3,14 @@ const { setUser } = require("../service/token");
 
 const User = require("../modal/user");
 
-const key = "sikfm%$90is";
+const { encrypt_key } = require("../config");
 
 async function userLogin(req, res) {
   try {
     const { email, password } = req.body;
     let data = await User.findOne({ email: email });
     if (data) {
-      const decrypted = crypto.AES.decrypt(data.password, key).toString(
+      const decrypted = crypto.AES.decrypt(data.password, encrypt_key).toString(
         crypto.enc.Utf8
       );
       if (decrypted === password) {
