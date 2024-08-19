@@ -1,13 +1,13 @@
 const crypto = require("crypto-js");
 
 const User = require("../modal/user");
-<<<<<<< HEAD
+
 const Leave = require("../modal/leave_balance");
 const EmployeeLeaves = require("../modal/receive_leaves");
 const key = "sikfm%$90is";
-=======
+
 const { encrypt_key } = require("../config");
->>>>>>> 80d0466574473c44f611bcb83c62ec716a1d184b
+
 
 async function addUser(req, res) {
   const {

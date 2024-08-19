@@ -2,6 +2,7 @@ const Leave = require("../modal/leave_balance");
 const EmployeeLeaves = require("../modal/receive_leaves");
 const { user_email, to, url } = require("../config");
 const { emailConnection } = require("../connection");
+const { default: mongoose } = require("mongoose");
 
 async function sendLeave(req, res) {
   try {
@@ -120,26 +121,41 @@ async function inviteEmployee(req, res) {
 }
 
 async function updateMsgStatus(req, res) {
-  try {
-    const { employee_id, status } = req.body;
+  const { employee_id, leave_id, status } = req.body;
 
-    // Find the document that contains the message and update its status
-    const employeeMessage = await EmployeeLeaves.findOneAndUpdate(
-      { "messages._id": employee_id }, // Find the specific message by its ID
-      { 
-        $set: { "messages.$.status": status } // Update only the status of the matched message
+  if (!employee_id || !leave_id || !status) {
+    return res.status(400).json({ message: 'Missing required fields' });
+  }
+
+  try {
+   
+    const leaveObjectId = mongoose.Types.ObjectId.createFromHexString(leave_id);
+ 
+
+    // Log the query
+    const query = {
+      employee_id: employee_id,
+      'messages._id': leaveObjectId // Ensure this matches the structure
+    };
+
+    const updatedDocument = await EmployeeLeaves.findOneAndUpdate(
+      query,
+      {
+        $set: {
+          'messages.$.status': status
+        }
       },
-      { new: true } // Return the modified document after the update
+      { new: true } 
     );
 
-    if (!employeeMessage) {
-      return res.status(404).json({ msg: "Message not found" });
+    if (!updatedDocument) {
+      return res.status(404).json({ message: 'No document found' });
     }
 
-    res.status(200).json({ msg: "Status updated successfully", data: employeeMessage });
-  } catch (err) {
-    console.error("Error updating message status:", err);
-    res.status(500).json({ msg: "Unable to update status" });
+    return res.status(200).json({ message: 'Status updated successfully', updatedDocument });
+  } catch (error) {
+    console.error('Error updating message status:', error);
+    return res.status(500).json({ message: 'Server error' });
   }
 }
 
