@@ -36,7 +36,7 @@ mongoose
 
 // Cors setup
 const corsOptions = {
- origin: ["http://localhost:5173" , "https://darling-kelpie-f89b08.netlify.app" , "https://66c48be9dff7ac17d6a20c9e--darling-conkies-f04acc.netlify.app/"],
+ origin: ["http://localhost:5173" , "https://darling-kelpie-f89b08.netlify.app" , "https://66c48be9dff7ac17d6a20c9e--darling-conkies-f04acc.netlify.app"],
 
   methods: "GET,HEAD,PUT,PATCH,POST,DELETE",
   credentials: true,
