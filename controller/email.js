@@ -122,26 +122,25 @@ async function inviteEmployee(req, res) {
 async function updateMsgStatus(req, res) {
   try {
     const { employee_id, status } = req.body;
-
-    // Find the document that contains the message and update its status
     const employeeMessage = await EmployeeLeaves.findOneAndUpdate(
-      { "messages._id": employee_id }, // Find the specific message by its ID
-      { 
-        $set: { "messages.$.status": status } // Update only the status of the matched message
+      { "messages._id": employee_id },
+      {
+        $set: { "messages.$.status": status },
       },
-      { new: true } // Return the modified document after the update
+      { new: true }
     );
 
     if (!employeeMessage) {
       return res.status(404).json({ msg: "Message not found" });
     }
 
-    res.status(200).json({ msg: "Status updated successfully", data: employeeMessage });
+    res
+      .status(200)
+      .json({ msg: "Status updated successfully", data: employeeMessage });
   } catch (err) {
     console.error("Error updating message status:", err);
     res.status(500).json({ msg: "Unable to update status" });
   }
 }
-
 
 module.exports = { sendLeave, leaveReply, inviteEmployee, updateMsgStatus };

@@ -5,6 +5,7 @@ var cookieParser = require("cookie-parser");
 var logger = require("morgan");
 var cors = require("cors");
 const dotenv = require("dotenv");
+const mongoose = require("mongoose");
 const { mongodbConnection } = require("./connection");
 const { authentication } = require("./middleware/auth");
 
@@ -19,7 +20,9 @@ const leaveUpdateRouter = require("./routes/receive_leave");
 var app = express();
 //Mongoose Connection
 mongoose
-  .connect("mongodb+srv://skillconnection:skillconnection123@skill-connection.qwcftsr.mongodb.net/LMS")
+  .connect(
+    "mongodb+srv://skillconnection:skillconnection123@skill-connection.qwcftsr.mongodb.net/LMS"
+  )
   .then(() => {
     console.log("Connection Successfully");
   })
