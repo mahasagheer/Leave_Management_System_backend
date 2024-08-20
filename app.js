@@ -35,20 +35,8 @@ mongoose
   });
 
 // Cors setup
-const allowedOrigins = [
-  "http://localhost:5173",
-  "https://darling-kelpie-f89b08.netlify.app",
-  "https://66c48be9dff7ac17d6a20c9e--darling-conkies-f04acc.netlify.app"
-];
-
 const corsOptions = {
-  origin: function (origin, callback) {
-    if (allowedOrigins.indexOf(origin) !== -1 || !origin) {
-      callback(null, true);
-    } else {
-      callback(new Error("Not allowed by CORS"));
-    }
-  },
+  origin: "*", // Allow all origins
   methods: "GET,HEAD,PUT,PATCH,POST,DELETE",
   credentials: true,
   optionsSuccessStatus: 204,
