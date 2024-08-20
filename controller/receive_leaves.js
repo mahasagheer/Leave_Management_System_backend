@@ -68,15 +68,14 @@ async function UserMessages(req, res) {
 }
 async function UserMessagesForHR(req, res) {
   try {
-
     const matchStage = req.params.status !== "All" 
       ? { $match: { "messages.status": req.params.status } } 
       : {}; 
 
     const pipeline = [
-      { $unwind: "$messages" }, 
-      ...(req.params.status !== "All" ? [matchStage] : []), 
- 
+      { $unwind: "$messages" },
+      ...(req.params.status !== "All" ? [matchStage] : []),
+      { $sort: { "messages.timestamp": -1 } } 
     ];
 
     const messages = await EmployeeLeaves.aggregate(pipeline).exec();
@@ -84,8 +83,9 @@ async function UserMessagesForHR(req, res) {
     
   } catch (error) {
     console.error("Error fetching messages:", error);
-    throw error;
+    res.status(500).send("Error fetching messages");
   }
 }
+
 
 module.exports = { AddEmployeeLeaveDetail, updateLeaveDetail, UserMessages , UserMessagesForHR };

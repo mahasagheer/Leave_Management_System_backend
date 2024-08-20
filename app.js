@@ -16,6 +16,7 @@ var authRouter = require("./routes/auth");
 const emailRouter = require("./routes/email");
 const leaveRouter = require("./routes/leave_balance");
 const leaveUpdateRouter = require("./routes/receive_leave");
+const { default: mongoose } = require("mongoose");
 
 var app = express();
 //Mongoose Connection
