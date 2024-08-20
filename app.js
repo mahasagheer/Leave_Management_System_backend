@@ -6,8 +6,7 @@ var logger = require("morgan");
 var cors = require("cors");
 const dotenv = require("dotenv");
 const mongoose = require("mongoose");
-const { mongodbConnection } = require("./connection");
-const { authentication } = require("./middleware/auth");
+const http = require("http");
 
 // Routes Import
 var indexRouter = require("./routes/index");
@@ -16,19 +15,23 @@ var authRouter = require("./routes/auth");
 const emailRouter = require("./routes/email");
 const leaveRouter = require("./routes/leave_balance");
 const leaveUpdateRouter = require("./routes/receive_leave");
-// const { default: mongoose } = require("mongoose");
+const { DB_URL } = require("./config");
 
 var app = express();
-//Mongoose Connection
+
+// Load environment variables
+dotenv.config();
+
+// Mongoose Connection
 mongoose
   .connect(
-    "mongodb+srv://skillconnection:skillconnection123@skill-connection.qwcftsr.mongodb.net/LMS"
+    DB_URL
   )
   .then(() => {
     console.log("Connection Successfully");
   })
   .catch((err) => {
-    console.log("Received an Error");
+    console.log("Received an Error:", err.message);
   });
 
 // Cors setup
@@ -43,9 +46,9 @@ app.use(cors(corsOptions));
 // view engine setup
 app.set("views", path.join(__dirname, "views"));
 app.set("view engine", "jade");
+
 // middleware
 app.use(logger("dev"));
-dotenv.config();
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 app.use(cookieParser());
@@ -76,6 +79,44 @@ app.use(function (err, req, res, next) {
   // render the error page
   res.status(err.status || 500);
   res.render("error");
+});
+
+// Set Port and Create HTTP Server
+const PORT = process.env.PORT || 5000;
+app.set("port", PORT);
+
+const server = http.createServer(app);
+
+server.listen(PORT, () => {
+  console.log(`Server is running on port ${PORT}`);
+});
+
+server.on("error", (error) => {
+  if (error.syscall !== "listen") {
+    throw error;
+  }
+
+  const bind = typeof PORT === "string" ? "Pipe " + PORT : "Port " + PORT;
+
+  // handle specific listen errors with friendly messages
+  switch (error.code) {
+    case "EACCES":
+      console.error(bind + " requires elevated privileges");
+      process.exit(1);
+      break;
+    case "EADDRINUSE":
+      console.error(bind + " is already in use");
+      process.exit(1);
+      break;
+    default:
+      throw error;
+  }
+});
+
+server.on("listening", () => {
+  const addr = server.address();
+  const bind = typeof addr === "string" ? "pipe " + addr : "port " + addr.port;
+
 });
 
 module.exports = app;

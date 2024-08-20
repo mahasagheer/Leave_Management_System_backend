@@ -8,4 +8,5 @@ module.exports = {
   url: process.env.WEB_URL,
   encrypt_key: process.env.ENCRYPT_KEY,
   secret_key: process.env.SECRET_KEY,
+  DB_URL: process.env.DB_URL,
 };
