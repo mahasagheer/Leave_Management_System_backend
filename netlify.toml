@@ -1,0 +1,14 @@
+[build]
+  # Command to build your app (skip this if not needed)
+  command = "npm install"
+
+  # Directory to publish the site from
+  publish = "public"
+
+  # Directory where serverless functions (if any) are stored
+  functions = "functions"
+
+[[redirects]]
+  from = "/*"
+  to = "/.netlify/functions/server"
+  status = 200
