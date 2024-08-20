@@ -16,7 +16,7 @@ var authRouter = require("./routes/auth");
 const emailRouter = require("./routes/email");
 const leaveRouter = require("./routes/leave_balance");
 const leaveUpdateRouter = require("./routes/receive_leave");
-const { default: mongoose } = require("mongoose");
+// const { default: mongoose } = require("mongoose");
 
 var app = express();
 //Mongoose Connection
@@ -58,7 +58,7 @@ app.use("/send_email", emailRouter);
 app.use("/users", usersRouter);
 app.use("/employee_leave_detail", leaveRouter);
 app.use("/inbox_messages", leaveUpdateRouter);
-app.use("/:id", leaveUpdateRouter);
+app.use("/:employee_id", leaveUpdateRouter);
 app.use("/:employee_id", usersRouter);
 app.use("/:employee_id", leaveRouter);
 

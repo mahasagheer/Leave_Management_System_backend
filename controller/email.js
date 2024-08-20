@@ -36,16 +36,41 @@ async function sendLeave(req, res) {
 
 async function leaveReply(req, res) {
   try {
-    const { name, email, comment, employee_id, status } = req.body;
+    const { name, email, comment, employee_id, status, leave_id } = req.body;
     const transporter = await emailConnection();
 
     if (status === "Approved") {
       console.log(employee_id);
-      const leave = await Leave.updateOne(
-        { employee_id: employee_id },
-        { $inc: { remaining_leave: -1, pending_leave: -1 } }
+      console.log(leave_id);
+      const user = await EmployeeLeaves.findOne(
+        {
+          employee_id: employee_id,
+          "messages._id": leave_id,
+        },
+        {
+          "messages.$": 1,
+        }
       );
 
+      const days = user.messages.map((message) => message.days);
+      const leaveType = user.messages.map((message) => message.leave_type);
+
+      if (leaveType == "Sick Leave") {
+        const leave = await Leave.updateOne(
+          { employee_id: employee_id },
+          {
+            $inc: {
+              pending_leave: -1,
+              sick_leave: -days,
+            },
+          }
+        );
+      } else {
+        const leave = await Leave.updateOne(
+          { employee_id: employee_id },
+          { $inc: { remaining_leave: -days, pending_leave: -1 } }
+        );
+      }
       const info = await transporter.sendMail({
         from: `${name} <${user_email}>`, // sender address
         to: `${to}`, // list of receivers
