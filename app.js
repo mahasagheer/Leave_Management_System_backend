@@ -7,26 +7,28 @@ var cors = require("cors");
 const dotenv = require("dotenv");
 const mongoose = require("mongoose");
 const http = require("http");
+const swaggerUi = require("swagger-ui-express");
+const swaggerFile = require("./swagger-output.json");
 
 // Routes Import
 var indexRouter = require("./routes/index");
 var usersRouter = require("./routes/users");
 var authRouter = require("./routes/auth");
-const emailRouter = require("./routes/email"); 
+const emailRouter = require("./routes/email");
 const leaveRouter = require("./routes/leave_balance");
 const leaveUpdateRouter = require("./routes/receive_leave");
 const { DB_URL } = require("./config");
 
 var app = express();
+// Swagger setup
+app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerFile));
 
 // Load environment variables
 dotenv.config();
 
 // Mongoose Connection
 mongoose
-  .connect(
-    DB_URL
-  )
+  .connect(DB_URL)
   .then(() => {
     console.log("Connection Successfully");
   })
@@ -43,7 +45,6 @@ const corsOptions = {
 };
 
 app.use(cors(corsOptions));
-
 
 // view engine setup
 app.set("views", path.join(__dirname, "views"));
@@ -118,7 +119,6 @@ server.on("error", (error) => {
 server.on("listening", () => {
   const addr = server.address();
   const bind = typeof addr === "string" ? "pipe " + addr : "port " + addr.port;
-
 });
 
 module.exports = app;
