@@ -16,6 +16,17 @@ async function sendLeave(req, res) {
       leave_application,
     } = req.body;
     const transporter = await emailConnection();
+    if (
+      !name ||
+      !email ||
+      !leave_type ||
+      !days ||
+      !to_date ||
+      !from_date ||
+      !leave_application
+    ) {
+      return res.status(400).json({ msg: "Missing required fields" });
+    }
     const info = await transporter.sendMail({
       from: `${name} <${user_email}>`, // sender address
       to: `${to}`, // list of receivers
@@ -119,6 +130,9 @@ async function inviteEmployee(req, res) {
   try {
     const { name, email, password } = req.body;
     const transporter = await emailConnection();
+    if (!name || !email || !password) {
+      return res.status(400).json({ msg: "Missing required fields" });
+    }
 
     const info = await transporter.sendMail({
       from: `${name} <${user_email}>`, // sender address
@@ -136,10 +150,15 @@ async function inviteEmployee(req, res) {
       You can access the portal using this URL: ${url}
 
       If you have any questions or need assistance, feel free to reach out. We look forward to working with you!
-      Best Regards,
-      Iqra Sagheer`, // plain text body
+      Best Regards,`,
     });
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      return res.status(400).json({ msg: "Invalid email format" });
+    }
+
     console.log("Message sent: %s", info.messageId);
+    res.status(200).json({ msg: "Invitation email send successfully" });
   } catch (err) {
     res.status(500).json("Unable to send employee credentials");
   }
@@ -154,8 +173,6 @@ async function updateMsgStatus(req, res) {
 
   try {
     const leaveObjectId = mongoose.Types.ObjectId.createFromHexString(leave_id);
-
-    // Log the query
     const query = {
       employee_id: employee_id,
       "messages._id": leaveObjectId, // Ensure this matches the structure
