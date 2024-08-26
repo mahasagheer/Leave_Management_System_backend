@@ -1,5 +1,6 @@
 const Leave = require("../modal/leave_balance");
 const EmployeeLeaves = require("../modal/receive_leaves");
+const User = require("../modal/user");
 const { user_email, to, url } = require("../config");
 const { emailConnection } = require("../connection");
 const { default: mongoose } = require("mongoose");
@@ -27,16 +28,21 @@ async function sendLeave(req, res) {
     ) {
       return res.status(400).json({ msg: "Missing required fields" });
     }
-    const info = await transporter.sendMail({
-      from: `${name} <${user_email}>`, // sender address
-      to: `${to}`, // list of receivers
-      subject: `Leave Application from ${name} `, // Subject line
-      text: `Leave Type : ${leave_type}
+    const HR = await User.find({ role: ["HR", "admin"] });
+    const HRemail = HR.map((hr) => hr.email);
+    HRemail.map(async (mail) => {
+      const info = await transporter.sendMail({
+        from: `${name} <${email}>`, // sender address
+        to: `${mail}`, // list of receivers
+        subject: `Leave Application from ${name} `, // Subject line
+        text: `Leave Type : ${leave_type}
        From: ${from_date}
        To: ${to_date}
        Days:${days}
        Leave Application: ${leave_application}`, // plain text body
+      });
     });
+
     console.log("Message sent: %s", info.messageId);
 
     res.status(200).json({ msg: "Leave send successfully" });
