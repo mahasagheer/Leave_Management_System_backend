@@ -42,6 +42,7 @@ async function sendLeave(req, res) {
        Leave Application: ${leave_application}`, // plain text body
       });
     });
+    startReminderCron()
     console.log("Message sent: %s", info.messageId);
     res.status(200).json({ msg: "Leave send successfully" });
   } catch (err) {
