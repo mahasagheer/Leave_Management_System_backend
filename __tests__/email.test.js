@@ -1,5 +1,5 @@
 const request = require("supertest");
-const app = require("../app"); // Your Express app
+const app = require("../app");
 const { emailConnection } = require("../connection.js");
 const nodemailer = require("nodemailer");
 
