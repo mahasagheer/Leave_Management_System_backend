@@ -7,7 +7,8 @@ async function AddEmployeeLeaveDetail(req, res) {
     const { employee_id, message } = req.body;
     const leaveDetail = await EmployeeLeaves.create({
       employee_id: employee_id,
-      message: message,
+      messages: [{ ...message, viewed: false }], // Message initially marked as not viewed
+      notification: { hr: true, employee: false } // Notify HR/Admin
     });
 
     res.status(200).json({
@@ -26,7 +27,8 @@ async function updateLeaveDetail(req, res) {
     let updateEmployee = await EmployeeLeaves.updateOne(
       { employee_id: employee_id },
       {
-        $push: { messages: message },
+        $push: { messages: { ...message, viewed: false } },
+        $set: { "notification.employee": true } 
       },
       { new: true, useFindAndModify: false }
     );
@@ -37,16 +39,7 @@ async function updateLeaveDetail(req, res) {
     if (!updateEmployee) {
       return res.status(404).json({ message: "Leave record not found" });
     }
-    const HR = await User.find({ role: "HR" }).select("_id");
-    const ids = HR.map((hr) => hr._id);
-
-    let updateHR = await EmployeeLeaves.updateMany(
-      { employee_id: { $in: ids } },
-      {
-        $push: { messages: message },
-      },
-      { new: true, useFindAndModify: false }
-    );
+  
     return res.status(200).json(updateEmployee);
   } catch (err) {
     console.error("Error updating leave detail:", err);
