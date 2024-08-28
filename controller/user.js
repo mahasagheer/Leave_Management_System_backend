@@ -25,7 +25,6 @@ async function addUser(req, res) {
       role,
       phone,
     } = req.body;
-
     let existingUser = await User.findOne({ email: email });
     if (existingUser) {
       return res
