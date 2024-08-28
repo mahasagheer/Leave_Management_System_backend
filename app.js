@@ -17,8 +17,9 @@ var authRouter = require("./routes/auth");
 const emailRouter = require("./routes/email");
 const leaveRouter = require("./routes/leave_balance");
 const leaveUpdateRouter = require("./routes/receive_leave");
+const settingRouter = require("./routes/customTheme");
 const { DB_URL } = require("./config");
-
+const upload = require("./service/multer");
 var app = express();
 // Swagger setup
 app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerFile));
@@ -56,9 +57,12 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 app.use(cookieParser());
 app.use(express.static(path.join(__dirname, "public")));
+app.set("/public", path.join(__dirname, "public"));
+app.use("/uploads", express.static("uploads"));
 
 // Routes Configuration
 app.use("/", indexRouter);
+app.use("/system_setting", upload.single("logo"), settingRouter);
 app.use("/login", authRouter);
 app.use("/send_email", emailRouter);
 app.use("/users", usersRouter);
@@ -67,6 +71,7 @@ app.use("/inbox_messages", leaveUpdateRouter);
 app.use("/:employee_id", leaveUpdateRouter);
 app.use("/:employee_id", usersRouter);
 app.use("/:employee_id", leaveRouter);
+app.use("/:id", settingRouter);
 
 // catch 404 and forward to error handler
 app.use(function (req, res, next) {

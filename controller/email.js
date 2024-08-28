@@ -1,9 +1,9 @@
 const Leave = require("../modal/leave_balance");
 const EmployeeLeaves = require("../modal/receive_leaves");
+const User = require("../modal/user");
 const { user_email, to, url } = require("../config");
 const { emailConnection } = require("../connection");
 const { default: mongoose } = require("mongoose");
-const User = require("../modal/user");
 const startReminderCron = require("../crons/reminderCron");
 async function sendLeave(req, res) {
   try {
@@ -30,7 +30,8 @@ async function sendLeave(req, res) {
     }
     const HR = await User.find({ role: ["HR", "admin"] });
     const HRemail = HR.map((hr) => hr.email);
-    HRemail?.map(async (mail) => {
+
+    HRemail.map(async (mail) => {
       const info = await transporter.sendMail({
         from: `${name} <${email}>`, // sender address
         to: `${mail}`, // list of receivers
@@ -42,7 +43,8 @@ async function sendLeave(req, res) {
        Leave Application: ${leave_application}`, // plain text body
       });
     });
-    startReminderCron()
+
+    startReminderCron();
     console.log("Message sent: %s", info.messageId);
     res.status(200).json({ msg: "Leave send successfully" });
   } catch (err) {
@@ -68,14 +70,14 @@ async function sendReminder(req, res) {
 
     // Prepare HR emails
     const HRemails = HR.map((hr) => hr.email);
-    
+
     // Send emails to HR
     const emailPromises = HRemails.map(async (mail) => {
       try {
         const info = await transporter.sendMail({
           from: `${name} <${email}>`,
           to: mail,
-          subject: 'Pending Leave Request Reminder',
+          subject: "Pending Leave Request Reminder",
           text: `Reminder: The leave request from ${name} has been pending for over 6 hours. Please review and respond to the request.
           Name: ${name}
           Enail: ${email} `,
@@ -83,16 +85,15 @@ async function sendReminder(req, res) {
         console.log("Message sent: %s", info.messageId);
         const employees = await EmployeeLeaves.find();
         for (const employee of employees) {
-          employee?.messages?.forEach(message => {
+          employee?.messages?.forEach((message) => {
             if (message?.email === email) {
               message.reminder = false;
             }
           });
-         
+
           await employee.save();
         }
-        startReminderCron()
-       
+        startReminderCron();
       } catch (sendError) {
         console.error(`Error sending email to ${mail}:`, sendError);
         return { success: false, email: mail, error: sendError.message };
@@ -102,24 +103,22 @@ async function sendReminder(req, res) {
     const results = await Promise.all(emailPromises);
 
     // Check if all emails were sent successfully
-    const failedEmails = results.filter(result => result && !result.success);
+    const failedEmails = results.filter((result) => result && !result.success);
 
     if (failedEmails.length > 0) {
       return res.status(500).json({
         msg: "Some emails could not be sent",
-        failedEmails
+        failedEmails,
       });
     }
 
     // Success response
     res.status(200).json({ msg: "Reminder emails sent successfully" });
-
   } catch (err) {
-    console.error('Internal server error:', err);
+    console.error("Internal server error:", err);
     res.status(500).json({ msg: "Internal server error", error: err.message });
   }
 }
-
 
 async function leaveReply(req, res) {
   try {
@@ -206,6 +205,9 @@ async function inviteEmployee(req, res) {
   try {
     const { name, email, password } = req.body;
     const transporter = await emailConnection();
+    if (!name || !email || !password) {
+      return res.status(400).json({ msg: "Missing required fields" });
+    }
 
     const info = await transporter.sendMail({
       from: `${name} <${user_email}>`, // sender address
@@ -223,10 +225,15 @@ async function inviteEmployee(req, res) {
       You can access the portal using this URL: ${url}
 
       If you have any questions or need assistance, feel free to reach out. We look forward to working with you!
-      Best Regards,
-      Iqra Sagheer`, // plain text body
+      Best Regards,`,
     });
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      return res.status(400).json({ msg: "Invalid email format" });
+    }
+
     console.log("Message sent: %s", info.messageId);
+    res.status(200).json({ msg: "Invitation email send successfully" });
   } catch (err) {
     res.status(500).json("Unable to send employee credentials");
   }
@@ -241,8 +248,6 @@ async function updateMsgStatus(req, res) {
 
   try {
     const leaveObjectId = mongoose.Types.ObjectId.createFromHexString(leave_id);
-
-    // Log the query
     const query = {
       employee_id: employee_id,
       "messages._id": leaveObjectId, // Ensure this matches the structure
@@ -271,4 +276,10 @@ async function updateMsgStatus(req, res) {
   }
 }
 
-module.exports = { sendLeave, leaveReply, inviteEmployee, updateMsgStatus , sendReminder };
+module.exports = {
+  sendLeave,
+  leaveReply,
+  inviteEmployee,
+  updateMsgStatus,
+  sendReminder,
+};
