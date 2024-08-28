@@ -26,7 +26,7 @@ async function userLogin(req, res) {
           data: data,
           logoPath: logoPath, 
           color: color,
-        });
+        }); 
       }
     } else {
       res.json({
