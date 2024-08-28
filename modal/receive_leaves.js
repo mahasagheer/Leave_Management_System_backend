@@ -10,7 +10,10 @@ const messageSchema = new mongoose.Schema({
   from_date: { type: Date, required: true },
   leave_application: { type: String, required: true },
   status: { type: String, required: true },
-  employee_id: { type: String, required: true },
+  viewed: { type: Boolean, default: false },
+  reminder: { type: Boolean, default: false }, 
+  createdAt: { type: Date, default: Date.now } 
+
 });
 const EmployeeLeaveSchema = new mongoose.Schema(
   {
@@ -22,6 +25,10 @@ const EmployeeLeaveSchema = new mongoose.Schema(
     messages: {
       type: [messageSchema],
     },
+    notification: {
+      hr: { type: Boolean, default: false },  // Notification for HR/Admin
+      employee: { type: Boolean, default: false } // Notification for Employee
+    }
   },
   { timestamps: true }
 );
