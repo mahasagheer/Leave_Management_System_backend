@@ -4,7 +4,6 @@ const User = require("../modal/user");
 const { user_email, to, url } = require("../config");
 const { emailConnection } = require("../connection");
 const { default: mongoose } = require("mongoose");
-const User = require("../modal/user");
 const startReminderCron = require("../crons/reminderCron");
 async function sendLeave(req, res) {
   try {
@@ -33,7 +32,6 @@ async function sendLeave(req, res) {
     const HRemail = HR.map((hr) => hr.email);
 
     HRemail.map(async (mail) => {
-
       const info = await transporter.sendMail({
         from: `${name} <${email}>`, // sender address
         to: `${mail}`, // list of receivers
@@ -46,7 +44,7 @@ async function sendLeave(req, res) {
       });
     });
 
-    startReminderCron()
+    startReminderCron();
     console.log("Message sent: %s", info.messageId);
     res.status(200).json({ msg: "Leave send successfully" });
   } catch (err) {
@@ -72,14 +70,14 @@ async function sendReminder(req, res) {
 
     // Prepare HR emails
     const HRemails = HR.map((hr) => hr.email);
-    
+
     // Send emails to HR
     const emailPromises = HRemails.map(async (mail) => {
       try {
         const info = await transporter.sendMail({
           from: `${name} <${email}>`,
           to: mail,
-          subject: 'Pending Leave Request Reminder',
+          subject: "Pending Leave Request Reminder",
           text: `Reminder: The leave request from ${name} has been pending for over 6 hours. Please review and respond to the request.
           Name: ${name}
           Enail: ${email} `,
@@ -87,16 +85,15 @@ async function sendReminder(req, res) {
         console.log("Message sent: %s", info.messageId);
         const employees = await EmployeeLeaves.find();
         for (const employee of employees) {
-          employee?.messages?.forEach(message => {
+          employee?.messages?.forEach((message) => {
             if (message?.email === email) {
               message.reminder = false;
             }
           });
-         
+
           await employee.save();
         }
-        startReminderCron()
-       
+        startReminderCron();
       } catch (sendError) {
         console.error(`Error sending email to ${mail}:`, sendError);
         return { success: false, email: mail, error: sendError.message };
@@ -106,24 +103,22 @@ async function sendReminder(req, res) {
     const results = await Promise.all(emailPromises);
 
     // Check if all emails were sent successfully
-    const failedEmails = results.filter(result => result && !result.success);
+    const failedEmails = results.filter((result) => result && !result.success);
 
     if (failedEmails.length > 0) {
       return res.status(500).json({
         msg: "Some emails could not be sent",
-        failedEmails
+        failedEmails,
       });
     }
 
     // Success response
     res.status(200).json({ msg: "Reminder emails sent successfully" });
-
   } catch (err) {
-    console.error('Internal server error:', err);
+    console.error("Internal server error:", err);
     res.status(500).json({ msg: "Internal server error", error: err.message });
   }
 }
-
 
 async function leaveReply(req, res) {
   try {
@@ -281,4 +276,10 @@ async function updateMsgStatus(req, res) {
   }
 }
 
-module.exports = { sendLeave, leaveReply, inviteEmployee, updateMsgStatus , sendReminder };
+module.exports = {
+  sendLeave,
+  leaveReply,
+  inviteEmployee,
+  updateMsgStatus,
+  sendReminder,
+};
