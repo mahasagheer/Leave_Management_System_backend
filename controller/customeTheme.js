@@ -3,8 +3,7 @@ const Setting = require("../modal/systemSetting");
 async function CreateTheme(req, res) {
   try {
     const bgColor = req.body.color;
-    console.log(req.file.path);
-    const logo = req.file.path;
+    const logo = req.file.filename;
     const setSetting = await Setting.create({
       keyValuePairs: {
         color: bgColor,
