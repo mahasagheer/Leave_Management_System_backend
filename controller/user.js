@@ -25,21 +25,6 @@ async function addUser(req, res) {
       role,
       phone,
     } = req.body;
-    console.log(
-      name,
-      salary,
-      age,
-      exit_date,
-      Job_title,
-      gender,
-      hire_date,
-      department,
-      city,
-      email,
-      password,
-      role,
-      phone
-    );
     let existingUser = await User.findOne({ email: email });
     if (existingUser) {
       return res
