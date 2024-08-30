@@ -156,4 +156,32 @@ async function deleteUser(req, res) {
     });
   }
 }
-module.exports = { addUser, allUsers, singleUser, deleteUser, updateUser };
+async function resetpassword(req, res) {
+  try {
+    const { email, password } = req.body;
+    const encrypted = crypto.AES.encrypt(password, encrypt_key).toString();
+    const updatePassword = await User.findOneAndUpdate(
+      { email: email },
+      { $set: { password: encrypted } },
+      { new: true }
+    );
+    if (updatePassword) {
+      res
+        .status(200)
+        .json({ msg: "Updated password Successfully", data: updatePassword });
+    }
+    if (!updatePassword) {
+      res.status(400).json({ msg: "Unable to update password" });
+    }
+  } catch (err) {
+    res.status(500).json({ msg: "Unable to update password" });
+  }
+}
+module.exports = {
+  addUser,
+  allUsers,
+  singleUser,
+  deleteUser,
+  updateUser,
+  resetpassword,
+};

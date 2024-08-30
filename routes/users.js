@@ -6,6 +6,7 @@ const {
   deleteUser,
   updateUser,
   singleUser,
+  resetpassword,
 } = require("../controller/user");
 
 /* CURD users  */
@@ -14,5 +15,6 @@ router
   .get("/", allUsers)
   .get("/:id", singleUser)
   .put("/:id", updateUser)
-  .delete("/:id", deleteUser);
+  .delete("/:id", deleteUser)
+  .post("/update", resetpassword);
 module.exports = router;
