@@ -80,7 +80,7 @@ async function sendReminder(req, res) {
           subject: "Pending Leave Request Reminder",
           text: `Reminder: The leave request from ${name} has been pending for over 6 hours. Please review and respond to the request.
           Name: ${name}
-          Enail: ${email} `,
+          Email: ${email} `,
         });
         console.log("Message sent: %s", info.messageId);
         const employees = await EmployeeLeaves.find();
