@@ -1,0 +1,42 @@
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Leave History Report</title>
+    <style>
+      body { font-family: Arial, sans-serif; margin: 20px; } h1 { text-align:
+      center; color: #333; } table { width: 100%; border-collapse: collapse;
+      margin-top: 20px; } th, td { border: 1px solid #ddd; padding: 8px;
+      text-align: left; } th { background-color: #f2f2f2; } tr:nth-child(even) {
+      background-color: #f9f9f9; }
+    </style>
+  </head>
+  <body>
+    <h1>Approved Leave Report</h1>
+
+    <table>
+      <thead>
+        <tr>
+          <th>Leave Type</th>
+          <th>Leave Days</th>
+          <th>From</th>
+          <th>To</th>
+          <th>Reason Or Message</th>
+          <th>Status</th>
+        </tr>
+      </thead>
+      <tbody>
+        {{#each leaveHistory}}
+          <tr>
+            <td>{{this.leaveType}}</td>
+            <td>{{this.leaveDays}}</td>
+            <td>{{this.from}}</td>
+            <td>{{this.to}}</td>
+            <td>{{this.reason}}</td>
+            <td>{{this.status}}</td>
+          </tr>
+        {{/each}}
+      </tbody>
+    </table>
+  </body>
+</html>

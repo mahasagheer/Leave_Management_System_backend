@@ -5,6 +5,9 @@ const { user_email, to, url } = require("../config");
 const { emailConnection } = require("../connection");
 const { default: mongoose } = require("mongoose");
 const startReminderCron = require("../crons/reminderCron");
+const pdf_report = require("../crons/pdfReportCron");
+const path = require("path");
+
 async function sendLeave(req, res) {
   try {
     const {
