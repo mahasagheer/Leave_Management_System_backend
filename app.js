@@ -9,6 +9,7 @@ const mongoose = require("mongoose");
 const http = require("http");
 const swaggerUi = require("swagger-ui-express");
 const swaggerFile = require("./swagger-output.json");
+const pdfReport = require("./crons/pdfReportCron");
 
 // Routes Import
 var indexRouter = require("./routes/index");
@@ -19,6 +20,7 @@ const leaveRouter = require("./routes/leave_balance");
 const leaveUpdateRouter = require("./routes/receive_leave");
 const settingRouter = require("./routes/customTheme");
 const { DB_URL } = require("./config");
+
 const upload = require("./service/multer");
 var app = express();
 // Swagger setup
@@ -72,7 +74,7 @@ app.use("/:employee_id", leaveUpdateRouter);
 app.use("/:employee_id", usersRouter);
 app.use("/:employee_id", leaveRouter);
 app.use("/:id", settingRouter);
-
+pdfReport();
 // catch 404 and forward to error handler
 app.use(function (req, res, next) {
   next(createError(404));

@@ -15,17 +15,17 @@
     "debug": "~2.6.9",
     "dotenv": "^16.4.5",
     "express": "~4.16.1",
+    "fs-extra": "^11.2.0",
+    "handlebars": "^4.7.8",
     "http-errors": "~1.6.3",
     "jade": "~1.11.0",
     "jsonwebtoken": "^9.0.2",
     "mongoose": "^8.5.2",
     "morgan": "~1.9.1",
-
     "multer": "^1.4.5-lts.1",
-
     "node-cron": "^3.0.3",
-
     "nodemailer": "^6.9.14",
+    "puppeteer": "^23.2.2",
     "serverless-http": "^3.2.0",
     "swagger-autogen": "^2.23.7",
     "swagger-ui-express": "^5.0.1"
