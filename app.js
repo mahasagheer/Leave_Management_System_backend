@@ -10,6 +10,7 @@ const http = require("http");
 const swaggerUi = require("swagger-ui-express");
 const swaggerFile = require("./swagger-output.json");
 const pdfReport = require("./crons/pdfReportCron");
+const { Server } = require("socket.io");
 
 // Routes Import
 var indexRouter = require("./routes/index");
@@ -96,7 +97,21 @@ const PORT = process.env.PORT || 5000;
 app.set("port", PORT);
 
 const server = http.createServer(app);
+const io = new Server(server, {
+  cors: {
+    origin: "http://localhost:5173",
+    methods: ["GET", "POST"],
+  },
+});
 
+//Socket.io
+io.on("connection", (socket) => {
+  console.log("New user connected", socket.id);
+  socket.on("sendMessage", (data) => {
+    console.log("A new user message", data);
+    io.emit("receivedMessage", data);
+  });
+});
 server.listen(PORT, () => {
   console.log(`Server is running on port ${PORT}`);
 });
