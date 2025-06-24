@@ -10,15 +10,19 @@ async function addUser(req, res) {
       pending_leave,
       remaining_leave,
     } = req.body;
-    let newUser = await Leave.create({
+
+    // Organize and set defaults
+    const leaveData = {
       employee_id: employee_id,
-      annual_leave: annual_leave,
-      sick_leave: sick_leave,
-      rejected_leave: rejected_leave,
-      pending_leave: pending_leave,
-      remaining_leave: remaining_leave,
-    });
-    res.status(201).json("Employee leave detail added successfully");
+      annual_leave: Number(annual_leave),
+      sick_leave: sick_leave !== undefined ? Number(sick_leave) : 8, // default 8
+      rejected_leave: rejected_leave !== undefined ? Number(rejected_leave) : 0,
+      pending_leave: pending_leave !== undefined ? Number(pending_leave) : 0,
+      remaining_leave: remaining_leave !== undefined ? Number(remaining_leave) : Number(annual_leave), // default to annual_leave
+    };
+
+    let newUser = await Leave.create(leaveData);
+    res.status(201).json({ msg: "Employee leave detail added successfully", leave: newUser });
   } catch (err) {
     console.error(err);
     res.status(500).json("Unable to add employee leave detail");

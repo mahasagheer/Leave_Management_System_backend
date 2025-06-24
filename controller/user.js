@@ -7,6 +7,7 @@ const EmployeeLeaves = require("../modal/receive_leaves");
 const key = "sikfm%$90is";
 
 const { encrypt_key } = require("../config");
+const { sendInviteEmail } = require("./email");
 
 async function addUser(req, res) {
   try {
@@ -49,6 +50,12 @@ async function addUser(req, res) {
       role,
       phone,
     });
+
+    try {
+      await sendInviteEmail({ name, email, password });
+    } catch (emailErr) {
+      console.error("Failed to send invite email:", emailErr);
+    }
 
     res.status(201).json({ msg: "success", user: newUser._id });
   } catch (err) {

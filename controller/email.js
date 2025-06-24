@@ -279,10 +279,42 @@ async function updateMsgStatus(req, res) {
   }
 }
 
+async function sendInviteEmail({ name, email, password }) {
+  const transporter = await emailConnection();
+  if (!name || !email || !password) {
+    throw new Error("Missing required fields");
+  }
+  const info = await transporter.sendMail({
+    from: `${name} <${user_email}>`,
+    to: email,
+    subject: `Welcome to the Team!`,
+    text: `Dear ${name},
+
+Welcome aboard! We are thrilled to have you as a part of our team.
+
+To get started, please log in to your account using the following credentials:
+
+Email: ${email}
+Password: ${password}
+
+You can access the portal using this URL: ${url}
+
+If you have any questions or need assistance, feel free to reach out. We look forward to working with you!
+Best Regards,`,
+  });
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  if (!emailRegex.test(email)) {
+    throw new Error("Invalid email format");
+  }
+  console.log("Message sent: %s", info.messageId);
+  return info;
+}
+
 module.exports = {
   sendLeave,
   leaveReply,
   inviteEmployee,
   updateMsgStatus,
   sendReminder,
+  sendInviteEmail,
 };
