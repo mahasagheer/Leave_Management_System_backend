@@ -28,10 +28,10 @@ async function hrLeaveInbox(req,res){
               },
             },
             { $unwind: "$employee_info" },
-            { $match: { "employee_info.role": ["user","Manager"] } },
-            // { $unwind: "$messages" },
-            // ...(status !== "All" ? [{ $match: { "messages.status": status } }] : []),
-            // { $sort: { "messages.timestamp": -1 } },
+            { $match: { "employee_info.role": { $in: ["user", "Manager"] } } },
+            { $unwind: "$messages" },
+            ...(status !== "All" ? [{ $match: { "messages.status": status } }] : []),
+            { $sort: { "messages.timestamp": -1 } },
           ];
     
         const messages = await EmployeeLeaves.aggregate(pipeline).exec();

@@ -7,6 +7,7 @@ const LeaveSchema = new mongoose.Schema(
       required: true,
       unique: true,
     },
+    
     annual_leave: {
       type: Number,
       required: true,
