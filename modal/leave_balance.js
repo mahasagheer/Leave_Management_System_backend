@@ -10,14 +10,14 @@ const LeaveSchema = new mongoose.Schema(
     annual_leave: {
       type: Number,
       required: true,
-      max: 35,
-      min: 5,
+      max: 18,
+      min: 3,
     },
     sick_leave: {
       type: Number,
       required: true,
-      max: 25,
-      min: 5,
+      max: 18,
+      min: 3,
     },
     rejected_leave: {
       type: Number,
@@ -33,7 +33,7 @@ const LeaveSchema = new mongoose.Schema(
       type: Number,
       default: 0,
       min: 0,
-      max: 55,
+      max: 18,
     },
   },
   { timestamps: true }
