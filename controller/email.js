@@ -279,6 +279,189 @@ async function updateMsgStatus(req, res) {
   }
 }
 
+
+async function managerApproveLeave(req, res) {
+  const { employee_id, message_id } = req.body;
+  console.log(req.body);
+
+  if (!employee_id || !message_id) {
+    return res.status(400).json({ message: "Missing required fields" });
+  }
+
+  try {
+    const leaveObjectId = mongoose.Types.ObjectId.createFromHexString(message_id);
+    const query = {
+      employee_id: employee_id,
+      "messages._id": leaveObjectId, // Ensure this matches the structure
+    };
+    console.log(query)
+    const updatedDocument = await EmployeeLeaves.findOneAndUpdate(
+      query,
+      {
+        $set: {
+          "messages.$.status": "Manager Approved",
+        },
+      },
+      { new: true }
+    );
+
+   
+    if (!updatedDocument) {
+      return res.status(404).json({ message: "Leave not found or already processed" });
+    }
+
+    res.status(200).json({ message: "Leave approved by Manager", updatedDocument });
+  } catch (err) {
+    console.error("Manager Approval Error:", err);
+    res.status(500).json({ message: "Server Error" });
+  }
+}
+
+
+
+async function hrApproveLeave(req, res) {
+  const { employee_id, message_id } = req.body;
+console.log(req)
+  if (!employee_id || !message_id) {
+    return res.status(400).json({ message: "Missing required fields" });
+  }
+
+  try {
+    const msgObjectId = new mongoose.Types.ObjectId(message_id);
+
+    // Step 1: Find employee leave document
+    const leaveDoc = await EmployeeLeaves.findOne({ employee_id });
+
+    if (!leaveDoc) {
+      return res.status(404).json({ message: "Employee leave doc not found" });
+    }
+
+    const msgIndex = leaveDoc.messages.findIndex(
+      (msg) => msg._id.toString() === message_id
+    );
+console.log(msgIndex)
+    if (msgIndex === -1) {
+      return res.status(404).json({ message: "Message not found" });
+    }
+
+    const leaveMessage = leaveDoc.messages[msgIndex];
+console.log(leaveMessage)
+    if (leaveMessage.status !== "Manager Approved") {
+      return res.status(400).json({ message: "Not approved by manager yet" });
+    }
+
+    // Step 2: Update message status
+    leaveDoc.messages[msgIndex].status = "HR Approved";
+    leaveDoc.notification.employee = true;
+    await leaveDoc.save();
+
+    // Step 3: Deduct 1 from annual leave
+    if (leaveMessage.leave_type === "Annual") {
+      await Leave.updateOne(
+        { employee_id },
+        { $inc: { remaining_leave : -1 } }
+      );
+    }
+
+    res.status(200).json({ message: "Leave approved by HR & Annual Leaves updated" });
+  } catch (err) {
+    console.error("HR Approval Error:", err);
+    res.status(500).json({ message: "Server Error" });
+  }
+}
+
+async function managerRejectLeave(req, res) {
+  const { employee_id, message_id, reason } = req.body;
+
+  if (!employee_id || !message_id) {
+    return res.status(400).json({ message: "Missing required fields" });
+  }
+
+  try {
+    const msgObjectId = new mongoose.Types.ObjectId(message_id);
+
+    const leaveDoc = await EmployeeLeaves.findOne({ employee_id });
+
+    if (!leaveDoc) {
+      return res.status(404).json({ message: "Leave document not found" });
+    }
+
+    const msgIndex = leaveDoc.messages.findIndex(
+      (msg) => msg._id.toString() === message_id
+    );
+
+    if (msgIndex === -1) {
+      return res.status(404).json({ message: "Message not found" });
+    }
+
+    const message = leaveDoc.messages[msgIndex];
+
+    if (message.status !== "Pending") {
+      return res.status(400).json({ message: "Leave already processed" });
+    }
+
+    // Update status and add optional rejection note
+    leaveDoc.messages[msgIndex].status = "Rejected by Manager";
+ 
+    leaveDoc.notification.employee = true;
+
+    await leaveDoc.save();
+
+    res.status(200).json({ message: "Leave rejected by Manager" });
+  } catch (err) {
+    console.error("Manager rejection error:", err);
+    res.status(500).json({ message: "Server error" });
+  }
+}
+
+async function hrRejectLeave(req, res) {
+  const { employee_id, message_id, reason } = req.body;
+
+  if (!employee_id || !message_id) {
+    return res.status(400).json({ message: "Missing required fields" });
+  }
+
+  try {
+    const msgObjectId = new mongoose.Types.ObjectId(message_id);
+
+    const leaveDoc = await EmployeeLeaves.findOne({ employee_id });
+
+    if (!leaveDoc) {
+      return res.status(404).json({ message: "Leave document not found" });
+    }
+
+    const msgIndex = leaveDoc.messages.findIndex(
+      (msg) => msg._id.toString() === message_id
+    );
+
+    if (msgIndex === -1) {
+      return res.status(404).json({ message: "Message not found" });
+    }
+
+    const message = leaveDoc.messages[msgIndex];
+
+    if (message.status !== "Manager Approved") {
+      return res.status(400).json({ message: "Leave not yet approved by Manager" });
+    }
+
+    // Update status and optional reason
+    leaveDoc.messages[msgIndex].status = "Rejected by HR";
+    // if (reason) {
+    //   leaveDoc.messages[msgIndex].rejection_reason = reason;
+    // }
+    leaveDoc.notification.employee = true;
+
+    await leaveDoc.save();
+
+    res.status(200).json({ message: "Leave rejected by HR" });
+  } catch (err) {
+    console.error("HR rejection error:", err);
+    res.status(500).json({ message: "Server error" });
+  }
+}
+
+
+
 async function sendInviteEmail({ name, email, password }) {
   const transporter = await emailConnection();
   if (!name || !email || !password) {
@@ -317,4 +500,5 @@ module.exports = {
   updateMsgStatus,
   sendReminder,
   sendInviteEmail,
+  managerApproveLeave,hrApproveLeave,managerRejectLeave,hrRejectLeave
 };

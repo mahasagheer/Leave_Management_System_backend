@@ -6,8 +6,18 @@ const {
   inviteEmployee,
   updateMsgStatus,
   sendReminder,
+  hrApproveLeave,
+  managerApproveLeave,
+  hrRejectLeave,
+  managerRejectLeave,
 } = require("../controller/email");
+
+
 router
+.put("/hr_approve",hrApproveLeave)
+.put("/manager_approve",managerApproveLeave)
+.put("/hr_reject", hrRejectLeave)
+.put("/manager_reject", managerRejectLeave)
   .post("/", sendLeave)
   .post("/leave_reply", leaveReply)
   .post("/invite_employee", inviteEmployee)
