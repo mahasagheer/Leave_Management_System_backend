@@ -19,7 +19,9 @@ async function sendLeave(req, res) {
       from_date,
       leave_application,
     } = req.body;
+
     const transporter = await emailConnection();
+
     if (
       !name ||
       !email ||
@@ -31,30 +33,53 @@ async function sendLeave(req, res) {
     ) {
       return res.status(400).json({ msg: "Missing required fields" });
     }
-    const HR = await User.find({ role: ["HR", "admin"] });
-    const HRemail = HR.map((hr) => hr.email);
 
-    HRemail.map(async (mail) => {
-      const info = await transporter.sendMail({
-        from: `${name} <${email}>`, // sender address
-        to: `${mail}`, // list of receivers
-        subject: `Leave Application from ${name} `, // Subject line
-        text: `Leave Type : ${leave_type}
-       From: ${from_date}
-       To: ${to_date}
-       Days:${days}
-       Leave Application: ${leave_application}`, // plain text body
+    // Step 1: Find sender's role
+    const sender = await User.findOne({ email });
+    if (!sender) {
+      return res.status(404).json({ msg: "Sender not found in system" });
+    }
+
+    let targetRoles = [];
+
+    // Step 2: Decide recipients based on sender's role
+    if (sender.role === "user") {
+      targetRoles = ["HR", "Manager", "admin"];
+    } else if (sender.role === "Manager") {
+      targetRoles = ["HR", "admin"];
+    } else if (sender.role === "HR") {
+      targetRoles = ["admin"];
+    } else {
+      return res.status(403).json({ msg: "You are not allowed to send leave request" });
+    }
+
+    // Step 3: Find target recipients
+    const recipients = await User.find({ role: { $in: targetRoles } });
+    const recipientEmails = recipients.map((r) => r.email);
+
+    // Step 4: Send emails to all recipients
+    for (const mail of recipientEmails) {
+      await transporter.sendMail({
+        from: `<${email}>`,
+        to: mail,
+        subject: `Leave Application from ${name}`,
+        text: `Leave Type: ${leave_type}
+From: ${from_date}
+To: ${to_date}
+Days: ${days}
+Leave Application: ${leave_application}`
       });
-    });
+    }
 
     startReminderCron();
-    // console.log("Message sent: %s", info.messageId);
-    res.status(200).json({ msg: "Leave send successfully" });
+
+    res.status(200).json({ msg: "Leave sent successfully" });
   } catch (err) {
-    console.log(err)
+    console.log(err);
     res.status(500).json({ msg: "Internal server error" });
   }
 }
+
 
 async function sendReminder(req, res) {
   try {

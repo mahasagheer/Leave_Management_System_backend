@@ -9,7 +9,10 @@ async function sendLeaveReply(leaveMessage, employee_id) {
     email,
     comment,
     status,
-    leaveType: leave_type,
+    days,
+    leave_type,
+    to_date,
+    from_date,
     leave_id: _id,
   } = leaveMessage;
 
@@ -25,9 +28,7 @@ async function sendLeaveReply(leaveMessage, employee_id) {
         }
       );
 
-      const message = user?.messages?.[0];
-      const days = message?.days || 0;
-      const leaveType = message?.leave_type || "";
+      const leaveType = leave_type || "";
 
       if (leaveType === "Sick Leave") {
         await Leave.updateOne(
@@ -62,6 +63,36 @@ async function sendLeaveReply(leaveMessage, employee_id) {
       );
     }
     sendMail(email, name, comment, status);
+    if (status === "Manager Approved") {
+      // Step 1: Find all users with role 'HR'
+      const HRs = await User.find({ role: "HR" });
+      const HR_Emails = HRs.map((hr) => hr.email);
+
+      // Step 2: Send email to each HR
+      for (const mail of HR_Emails) {
+        await transporter.sendMail({
+          from: `<${user_email}>`,
+          to: mail,
+          subject: `Leave Awaiting HR Approval`,
+          text: `Dear HR Team,
+      
+      This is to inform you that the leave request submitted by ${name} has been approved by the Manager and is now pending your review.
+      
+      Leave Details:
+      - Type: ${leave_type}
+      - From: ${from_date}
+      - To: ${to_date}
+      - Days: ${days}
+      - Applicant Email: ${email}
+      
+      Kindly log in to the system to review and take necessary action.
+      
+      Best Regards,  
+      Codace Solutions`,
+        });
+      }
+    }
+
     return { success: true, message: "Leave reply sent successfully." };
   } catch (error) {
     console.error("Error sending leave reply:", error);
@@ -88,7 +119,7 @@ async function sendMail(email, name, comment, status) {
       approvalMessage =
         "Your leave request has been fully approved. You are now free to take the requested days off.";
       subjectLine = "Leave Status: Fully Approved ✅";
-    } 
+    }
 
     await transporter.sendMail({
       from: `<${user_email}>`,
@@ -119,7 +150,7 @@ async function sendMail(email, name, comment, status) {
       rejectionBy = "HR Department";
     } else if (status === "Admin Rejected") {
       rejectionBy = "Admin";
-    } 
+    }
 
     await transporter.sendMail({
       from: `<${user_email}>`,
