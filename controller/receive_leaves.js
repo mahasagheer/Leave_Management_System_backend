@@ -11,7 +11,7 @@ async function AddEmployeeLeaveDetail(req, res) {
     const { employee_id, message } = req.body;
     const leaveDetail = await EmployeeLeaves.create({
       employee_id: employee_id,
-      messages: [{ ...message, viewed: false }], // Message initially marked as not viewed
+      messages: [], // Message initially marked as not viewed
       notification: { hr: true, employee: false }, // Notify HR/Admin
     });
 

@@ -48,9 +48,10 @@ async function sendLeave(req, res) {
     });
 
     startReminderCron();
-    console.log("Message sent: %s", info.messageId);
+    // console.log("Message sent: %s", info.messageId);
     res.status(200).json({ msg: "Leave send successfully" });
   } catch (err) {
+    console.log(err)
     res.status(500).json({ msg: "Internal server error" });
   }
 }
