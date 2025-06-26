@@ -1,6 +1,6 @@
 const mongoose = require("mongoose");
 const nodemailer = require("nodemailer");
-const { user_email, pass, to, url } = require("./config");
+const { user_email, pass} = require("./config");
 
 async function mongodbConnection(url) {
   return mongoose.connect(url);

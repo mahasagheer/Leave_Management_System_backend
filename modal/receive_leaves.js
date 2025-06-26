@@ -10,6 +10,7 @@ const messageSchema = new mongoose.Schema({
   from_date: { type: Date, required: true },
   leave_application: { type: String, required: true },
   status: { type: String, required: true },
+  comment: { type: String },
   viewed: { type: Boolean, default: false },
   reminder: { type: Boolean, default: false }, 
   createdAt: { type: Date, default: Date.now } 

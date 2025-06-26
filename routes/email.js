@@ -10,6 +10,8 @@ const {
   managerApproveLeave,
   hrRejectLeave,
   managerRejectLeave,
+  AdminApproveLeave,
+  AdminRejectLeave,
 } = require("../controller/email");
 
 
@@ -17,6 +19,8 @@ router
 .put("/hr_approve",hrApproveLeave)
 .put("/manager_approve",managerApproveLeave)
 .put("/hr_reject", hrRejectLeave)
+.put("/admin_approve",AdminApproveLeave)
+.put("/admin_reject", AdminRejectLeave)
 .put("/manager_reject", managerRejectLeave)
   .post("/", sendLeave)
   .post("/leave_reply", leaveReply)
