@@ -44,7 +44,7 @@ async function sendLeave(req, res) {
 
     // Step 2: Decide recipients based on sender's role
     if (sender.role === "user") {
-      targetRoles = ["HR", "Manager", "admin"];
+      targetRoles = [ "Manager", "admin"];
     } else if (sender.role === "Manager") {
       targetRoles = ["HR", "admin"];
     } else if (sender.role === "HR") {
