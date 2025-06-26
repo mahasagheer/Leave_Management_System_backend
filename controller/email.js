@@ -328,7 +328,7 @@ console.log(req)
   }
 
   try {
-    const msgObjectId = new mongoose.Types.ObjectId(message_id);
+    const empObjectId = new mongoose.Types.ObjectId(employee_id);
 
     // Step 1: Find employee leave document
     const leaveDoc = await EmployeeLeaves.findOne({ employee_id });
@@ -337,18 +337,20 @@ console.log(req)
       return res.status(404).json({ message: "Employee leave doc not found" });
     }
 
+    const getUser = await User.findOne({_id: empObjectId }); 
+
     const msgIndex = leaveDoc.messages.findIndex(
       (msg) => msg._id.toString() === message_id
     );
-console.log(msgIndex)
     if (msgIndex === -1) {
       return res.status(404).json({ message: "Message not found" });
     }
-
     const leaveMessage = leaveDoc.messages[msgIndex];
-console.log(leaveMessage)
-    if (leaveMessage.status !== "Manager Approved") {
+
+    if( getUser.role !=="Manager"){
+    if (leaveMessage.status !== "Manager Approved" ) {
       return res.status(400).json({ message: "Not approved by manager yet" });
+    } 
     }
 
     // Step 2: Update message status

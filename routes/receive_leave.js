@@ -7,7 +7,7 @@ const {
   UserMessagesForHR,
   generatePDF,
 } = require("../controller/receive_leaves");
-const { hrLeaveInbox,managerLeaveInbox } = require("../controller/displayLeave");
+const { hrLeaveInbox,managerLeaveInbox, AdminLeaveInbox } = require("../controller/displayLeave");
  
 
 
@@ -16,7 +16,7 @@ router
   .post("/", AddEmployeeLeaveDetail)
   .patch("/", updateLeaveDetail)
   .get("/:id", UserMessages)
-  .get("/all_leaves/:status", UserMessagesForHR)
+  .get("/all_leaves/:status", AdminLeaveInbox)
   .get("/hr_leave/:status", hrLeaveInbox)
   .get("/manager_leave/:status",managerLeaveInbox);
 
