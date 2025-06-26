@@ -105,8 +105,7 @@ async function sendMail(email, name, comment, status) {
 
   if (
     status === "HR Approved" ||
-    status === "Admin Approved" ||
-    status === "Manager Approved"
+    status === "Admin Approved" 
   ) {
     let approvalMessage = "";
     let subjectLine = "";
@@ -139,8 +138,7 @@ async function sendMail(email, name, comment, status) {
     });
   } else if (
     status === "HR Rejected" ||
-    status === "Admin Rejected" ||
-    status === "Manager Rejected"
+    status === "Admin Rejected" 
   ) {
     let rejectionBy = "";
 
