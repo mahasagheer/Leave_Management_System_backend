@@ -653,7 +653,7 @@ To get started, please log in to your account using the following credentials:
 Email: ${email}
 Password: ${password}
 
-You can access the portal using this URL: ${url}
+You can access the portal using this URL: ${url}/forgot_password
 
 If you have any questions or need assistance, feel free to reach out. We look forward to working with you!
 Best Regards,`,
