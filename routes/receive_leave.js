@@ -18,7 +18,7 @@ router
   .get("/:id", UserMessages)
   .get("/all_leaves/:status", AdminLeaveInbox)
   .get("/hr_leave/:status", hrLeaveInbox)
-  .get("/manager_leave/:status",managerLeaveInbox);
+  .get("/manager_leave/:managerId/:status",managerLeaveInbox);
 
 
 module.exports = router;

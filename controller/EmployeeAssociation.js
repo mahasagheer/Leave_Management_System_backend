@@ -2,7 +2,7 @@ const User = require("../modal/user")
 
 async function GetAllEmployees(req,res){
     try {
-        const employees = await User.find({ role: "user" }).select("_id, name");
+        const employees = await User.find({ role: "user" }).select("_id name email Job_title");
         console.log(employees)
         res.status(200).json(employees);
       } catch (error) {

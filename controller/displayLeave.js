@@ -69,8 +69,24 @@ async function AdminLeaveInbox(req,res){
 
 async function managerLeaveInbox(req, res) {
   try {
-    const status = req.params.status;
+    const {managerId, status } = req.params;
 
+    if (!managerId) {
+      return res.status(400).json({ error: "Missing manager ID" });
+    }
+
+    // 🔍 Step 1: Get associated employee IDs of this manager
+    const manager = await User.findById(managerId).lean();
+
+    if (!manager || manager.role !== "Manager") {
+      return res.status(403).json({ error: "Access denied" });
+    }
+
+    const associatedIds = (manager.associatedEmployees || []).map((id) =>
+      typeof id === "string" ? new mongoose.Types.ObjectId(id) : id
+    );
+
+    // 🔍 Step 2: Build aggregation pipeline
     const pipeline = [
       {
         $addFields: {
@@ -92,20 +108,36 @@ async function managerLeaveInbox(req, res) {
         },
       },
       { $unwind: "$employee_info" },
+
+      // ✅ Filter: only show if role is "user"
       { $match: { "employee_info.role": "user" } },
+
+      // ✅ Filter: employee must be in manager.associatedEmployees
+      {
+        $match: {
+          employeeObjId: { $in: associatedIds },
+        },
+      },
+
+      // ✅ Unwind messages to get latest status per record
       { $unwind: "$messages" },
-      ...(status !== "All" ? [{ $match: { "messages.status": status } }] : []),
+
+      ...(status !== "All"
+        ? [{ $match: { "messages.status": status } }]
+        : []),
+
       { $sort: { "messages.timestamp": -1 } },
     ];
 
     const messages = await EmployeeLeaves.aggregate(pipeline).exec();
-  
+
     res.status(200).json(messages);
   } catch (error) {
     console.error("Error fetching manager leave inbox:", error);
     res.status(500).json({ success: false, error: "Internal Server Error" });
   }
 }
+
 
 
 

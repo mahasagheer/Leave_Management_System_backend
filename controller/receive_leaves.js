@@ -24,27 +24,72 @@ async function AddEmployeeLeaveDetail(req, res) {
   }
 }
 
+// async function updateLeaveDetail(req, res) {
+//   try {
+//     const { employee_id, message } = req.body;
+
+//     let updateEmployee = await EmployeeLeaves.updateOne(
+//       { employee_id: employee_id },
+//       {
+//         $push: { messages: { ...message, viewed: false } },
+//         $set: { "notification.employee": true },
+//       },
+//       { new: true, useFindAndModify: false }
+//     );
+//     const leave = await Leave.updateOne(
+//       { employee_id: employee_id },
+//       { $inc: { pending_leave: 1 } }
+//     );
+//     console.log(updateEmployee)
+//     if (!updateEmployee) {
+//       return res.status(404).json({ message: "Leave record not found" });
+//     }
+
+//     return res.status(200).json(updateEmployee);
+//   } catch (err) {
+//     console.error("Error updating leave detail:", err);
+//     res.status(500).json({
+//       msg: "Unable to update",
+//     });
+//   }
+// }
+
+
+const mongoose = require('mongoose');
+
 async function updateLeaveDetail(req, res) {
   try {
     const { employee_id, message } = req.body;
 
+    // Add _id manually so we can return it later
+    const messageWithId = {
+      _id: new mongoose.Types.ObjectId(),
+      ...message,
+      viewed: false,
+    };
+
     let updateEmployee = await EmployeeLeaves.updateOne(
       { employee_id: employee_id },
       {
-        $push: { messages: { ...message, viewed: false } },
+        $push: { messages: messageWithId },
         $set: { "notification.employee": true },
       },
       { new: true, useFindAndModify: false }
     );
-    const leave = await Leave.updateOne(
+
+    await Leave.updateOne(
       { employee_id: employee_id },
       { $inc: { pending_leave: 1 } }
     );
-    if (!updateEmployee) {
+
+    if (!updateEmployee || updateEmployee.modifiedCount === 0) {
       return res.status(404).json({ message: "Leave record not found" });
     }
 
-    return res.status(200).json(updateEmployee);
+    return res.status(200).json({
+      message: "Leave updated successfully",
+      message: messageWithId,
+    });
   } catch (err) {
     console.error("Error updating leave detail:", err);
     res.status(500).json({

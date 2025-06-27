@@ -18,6 +18,7 @@ async function sendLeave(req, res) {
       to_date,
       from_date,
       leave_application,
+      messageId:_id
     } = req.body;
 
     const transporter = await emailConnection();
@@ -34,30 +35,53 @@ async function sendLeave(req, res) {
       return res.status(400).json({ msg: "Missing required fields" });
     }
 
-    // Step 1: Find sender's role
+    // Step 1: Find sender
     const sender = await User.findOne({ email });
     if (!sender) {
       return res.status(404).json({ msg: "Sender not found in system" });
     }
+    const senderId = sender._id;
+    let recipientEmails = [];
 
-    let targetRoles = [];
-
-    // Step 2: Decide recipients based on sender's role
     if (sender.role === "user") {
-      targetRoles = [ "Manager", "admin"];
-    } else if (sender.role === "Manager") {
-      targetRoles = ["HR", "admin"];
-    } else if (sender.role === "HR") {
-      targetRoles = ["admin"];
-    } else {
-      return res.status(403).json({ msg: "You are not allowed to send leave request" });
+      // Step 2: Find the exact manager linked to this user
+      const manager = await User.findOne({
+        role: "Manager",
+        associatedEmployees: senderId,
+      });
+
+      if (!manager) {
+        return res.status(404).json({
+          msg: "No manager associated with this employee",
+        });
+      }
+
+      recipientEmails.push(manager.email);
+
+      // Optional: Also send to admin
+      const admins = await User.find({ role: "admin" });
+      recipientEmails.push(...admins.map((a) => a.email));
     }
 
-    // Step 3: Find target recipients
-    const recipients = await User.find({ role: { $in: targetRoles } });
-    const recipientEmails = recipients.map((r) => r.email);
+    else if (sender.role === "Manager") {
+      const hrAndAdmin = await User.find({
+        role: { $in: ["HR", "admin"] },
+      });
+      recipientEmails = hrAndAdmin.map((u) => u.email);
+    }
 
-    // Step 4: Send emails to all recipients
+    else if (sender.role === "HR") {
+      const admins = await User.find({ role: "admin" });
+      recipientEmails = admins.map((a) => a.email);
+    }
+
+    else {
+      return res
+        .status(403)
+        .json({ msg: "You are not allowed to send leave request" });
+    }
+const messageLink = `${url}/inbox_messages/${messageId}`
+    // Step 3: Send emails
     for (const mail of recipientEmails) {
       await transporter.sendMail({
         from: `<${email}>`,
@@ -67,7 +91,15 @@ async function sendLeave(req, res) {
 From: ${from_date}
 To: ${to_date}
 Days: ${days}
-Leave Application: ${leave_application}`
+Leave Application: ${leave_application}
+
+View this leave message here: ${messageLink}`,
+        html: `<p><strong>Leave Type:</strong> ${leave_type}</p>
+<p><strong>From:</strong> ${from_date}</p>
+<p><strong>To:</strong> ${to_date}</p>
+<p><strong>Days:</strong> ${days}</p>
+<p><strong>Leave Application:</strong><br/> ${leave_application}</p>
+<p><a href="${messageLink}" target="_blank">👉 View Leave Message</a></p>`,
       });
     }
 
@@ -79,6 +111,7 @@ Leave Application: ${leave_application}`
     res.status(500).json({ msg: "Internal server error" });
   }
 }
+
 
 
 async function sendReminder(req, res) {
@@ -304,47 +337,6 @@ async function updateMsgStatus(req, res) {
     return res.status(500).json({ message: "Server error" });
   }
 }
-
-
-// async function managerApproveLeave(req, res) {
-//   const { employee_id, message_id, comment } = req.body;
-
-//   if (!employee_id || !message_id) {
-//     return res.status(400).json({ message: "Missing required fields" });
-//   }
-
-//   try {
-//     const leaveObjectId = mongoose.Types.ObjectId.createFromHexString(message_id);
-//     const getUser = await User.findOne({_id: empObjectId }); 
-
-    
-//     const query = {
-//       employee_id: employee_id,
-//       "messages._id": leaveObjectId, // Ensure this matches the structure
-//     };
-//     const updatedDocument = await EmployeeLeaves.findOneAndUpdate(
-//       query,
-//       {
-//         $set: {
-//           "messages.$.status": "Manager Approved",
-//           "messages.$.comment": comment,
-
-//         },
-//       },
-//       { new: true }
-//     );
-
-   
-//     if (!updatedDocument) {
-//       return res.status(404).json({ message: "Leave not found or already processed" });
-//     }
-
-//     res.status(200).json({ message: "Leave approved by Manager", updatedDocument });
-//   } catch (err) {
-//     console.error("Manager Approval Error:", err);
-//     res.status(500).json({ message: "Server Error" });
-//   }
-// }
 
 
 async function managerApproveLeave(req, res) {
@@ -641,22 +633,26 @@ async function sendInviteEmail({ name, email, password }) {
     throw new Error("Missing required fields");
   }
   const info = await transporter.sendMail({
-    from: `${name} <${user_email}>`,
+    from: `<${user_email}>`,
     to: email,
     subject: `Welcome to the Team!`,
     text: `Dear ${name},
 
-Welcome aboard! We are thrilled to have you as a part of our team.
+Welcome to the team! We’re excited to have you on board and look forward to the contributions you’ll bring to our organization.
 
-To get started, please log in to your account using the following credentials:
+To help you get started, please log in to your account using the credentials below:
 
 Email: ${email}
-Password: ${password}
+Temporary Password: ${password}
 
-You can access the portal using this URL: ${url}/forgot_password
+You can access the portal using the following link:
+🔗 ${url}/forgot_password
+(Please update your password after logging in for the first time.)
 
-If you have any questions or need assistance, feel free to reach out. We look forward to working with you!
-Best Regards,`,
+If you have any questions or require assistance, don’t hesitate to reach out. We’re here to support you every step of the way.
+
+Best regards,
+The Team`,
   });
   const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
   if (!emailRegex.test(email)) {
