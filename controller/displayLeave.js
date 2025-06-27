@@ -3,6 +3,7 @@ const EmployeeLeaves = require("../modal/receive_leaves");
 const User = require("../modal/user");
 const mongoose = require("mongoose");
 const { ObjectId } = mongoose.Types;
+const { secret_key } = require("../config");
 
 async function hrLeaveInbox(req,res){
     try {
@@ -138,19 +139,37 @@ async function managerLeaveInbox(req, res) {
   }
 }
 
-async function verifyTokenforLeave(req,res){
+
+async function verifyTokenforLeave(req, res) {
   const { token } = req.body;
 
   try {
-    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    const decoded = jwt.verify(token, secret_key);
     const { leaveId, approverEmail, approverRole } = decoded;
 
-    const leave = await Leave.findOne({leaveId});
-    if (!leave) return res.status(404).json({ msg: "Leave not found" })
+    // Find the parent document that contains this message._id
+    const leaveDoc = await EmployeeLeaves.findOne({ "messages._id": leaveId });
 
-    await leave.save();
-    return res.json({leave,approverEmail,approverRole});
+    if (!leaveDoc) {
+      return res.status(404).json({ msg: "Leave not found" });
+    }
+
+    // Extract the exact message
+    const message = leaveDoc.messages.id(leaveId); // this is a Mongoose subdocument accessor
+
+    if (!message) {
+      return res.status(404).json({ msg: "Leave message not found" });
+    }
+
+    return res.status(200).json({
+      msg: "Token verified successfully",
+      message,
+      approverEmail,
+      approverRole,
+    });
+
   } catch (err) {
+    console.error(err);
     return res.status(401).json({ msg: "Invalid or expired token" });
   }
 }
