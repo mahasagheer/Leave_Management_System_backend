@@ -7,7 +7,7 @@ const { default: mongoose } = require("mongoose");
 const startReminderCron = require("../crons/reminderCron");
 const sendLeaveReply=require("../helperFunction/leaveReply")
 const jwt = require("jsonwebtoken");
-const { secret_key } = require("../config");const jwt = require("jsonwebtoken");
+const { secret_key } = require("../config");
 
 async function sendLeave(req, res) {
   try {
