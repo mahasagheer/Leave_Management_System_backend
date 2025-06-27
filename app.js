@@ -20,7 +20,7 @@ const leaveRouter = require("./routes/leave_balance");
 const leaveUpdateRouter = require("./routes/receive_leave");
 const settingRouter = require("./routes/customTheme");
 const { DB_URL } = require("./config");
-
+const employeeRouter= require("./routes/employeeAociation")
 const upload = require("./service/multer");
 var app = express();
 // Swagger setup
@@ -70,7 +70,7 @@ app.use("/send_email", emailRouter);
 app.use("/users", usersRouter);
 app.use("/employee_leave_detail", leaveRouter);
 app.use("/inbox_messages", leaveUpdateRouter);
-app.use("/:employee_id", leaveUpdateRouter);
+app.use("/association", employeeRouter);
 app.use("/:employee_id", usersRouter);
 app.use("/:employee_id", leaveRouter);
 app.use("/:id", settingRouter);

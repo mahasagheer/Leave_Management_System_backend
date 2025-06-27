@@ -66,6 +66,12 @@ const UserSchema = new mongoose.Schema(
       required: true,
       unique: true,
     },
+    associatedEmployees: [
+      {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "User_detail", // same model because employees bhi isi schema mein hain
+      },
+    ],
   },
   { timestamps: true }
 );
