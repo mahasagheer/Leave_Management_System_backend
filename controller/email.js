@@ -18,7 +18,7 @@ async function sendLeave(req, res) {
       to_date,
       from_date,
       leave_application,
-      messageId:_id
+      _id
     } = req.body;
 
     const transporter = await emailConnection();
@@ -80,7 +80,7 @@ async function sendLeave(req, res) {
         .status(403)
         .json({ msg: "You are not allowed to send leave request" });
     }
-const messageLink = `${url}/inbox_messages/${messageId}`
+const messageLink = `${url}/inbox_messages/${_id}`
     // Step 3: Send emails
     for (const mail of recipientEmails) {
       await transporter.sendMail({
