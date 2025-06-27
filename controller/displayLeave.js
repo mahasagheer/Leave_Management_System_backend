@@ -138,7 +138,24 @@ async function managerLeaveInbox(req, res) {
   }
 }
 
+async function verifyTokenforLeave(req,res){
+  const { token } = req.body;
+
+  try {
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    const { leaveId, approverEmail, approverRole } = decoded;
+
+    const leave = await Leave.findOne({leaveId});
+    if (!leave) return res.status(404).json({ msg: "Leave not found" })
+
+    await leave.save();
+    return res.json({leaveId,approverEmail,approverRole});
+  } catch (err) {
+    return res.status(401).json({ msg: "Invalid or expired token" });
+  }
+}
 
 
 
-module.exports = { hrLeaveInbox, managerLeaveInbox,AdminLeaveInbox };
+
+module.exports = { hrLeaveInbox, managerLeaveInbox,AdminLeaveInbox,verifyTokenforLeave };
