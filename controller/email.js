@@ -116,7 +116,7 @@ for (const mail of recipientEmails) {
     secret_key,
     { expiresIn: "1h" }
   );
-  const secureLink = `${url}/leave-action/:token=${token}`;
+  const secureLink = `${url}/leave-action/${token}`;
 
   await transporter.sendMail({
     from: `<${email}>`,

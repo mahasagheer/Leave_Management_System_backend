@@ -4,6 +4,7 @@ const User = require("../modal/user");
 const mongoose = require("mongoose");
 const { ObjectId } = mongoose.Types;
 const { secret_key } = require("../config");
+const jwt = require("jsonwebtoken");
 
 async function hrLeaveInbox(req,res){
     try {
@@ -163,6 +164,7 @@ async function verifyTokenforLeave(req, res) {
 
     return res.status(200).json({
       msg: "Token verified successfully",
+      employee_id: leaveDoc.employee_id,
       message,
       approverEmail,
       approverRole,
