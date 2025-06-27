@@ -6,7 +6,7 @@ const { emailConnection } = require("../connection");
 const { default: mongoose } = require("mongoose");
 const startReminderCron = require("../crons/reminderCron");
 const sendLeaveReply=require("../helperFunction/leaveReply")
-
+const jwt = require("jsonwebtoken");
 
 async function sendLeave(req, res) {
   try {
@@ -80,28 +80,55 @@ async function sendLeave(req, res) {
         .status(403)
         .json({ msg: "You are not allowed to send leave request" });
     }
-const messageLink = `${url}/inbox_messages/${_id}`
+// const messageLink = `${url}/inbox_messages/${_id}`
     // Step 3: Send emails
-    for (const mail of recipientEmails) {
-      await transporter.sendMail({
-        from: `<${email}>`,
-        to: mail,
-        subject: `Leave Application from ${name}`,
-        text: `Leave Type: ${leave_type}
-From: ${from_date}
-To: ${to_date}
-Days: ${days}
-Leave Application: ${leave_application}
+//     for (const mail of recipientEmails) {
+//       await transporter.sendMail({
+//         from: `<${email}>`,
+//         to: mail,
+//         subject: `Leave Application from ${name}`,
+//         text: `Leave Type: ${leave_type}
+// From: ${from_date}
+// To: ${to_date}
+// Days: ${days}
+// Leave Application: ${leave_application}
 
-View this leave message here: ${messageLink}`,
-        html: `<p><strong>Leave Type:</strong> ${leave_type}</p>
+// View this leave message here: ${messageLink}`,
+//         html: `<p><strong>Leave Type:</strong> ${leave_type}</p>
+// <p><strong>From:</strong> ${from_date}</p>
+// <p><strong>To:</strong> ${to_date}</p>
+// <p><strong>Days:</strong> ${days}</p>
+// <p><strong>Leave Application:</strong><br/> ${leave_application}</p>
+// <p><a href="${messageLink}" target="_blank">👉 View Leave Message</a></p>`,
+//       });
+//     }
+
+for (const mail of recipientEmails) {
+  const role = await User.findOne({ email: mail }).then((u) => u?.role || "unknown");
+  const token = jwt.sign(
+    {
+      leaveId: _id,
+      approverEmail: mail,
+      approverRole: role,
+      action: "approve-reject"
+    },
+    process.env.JWT_SECRET,
+    { expiresIn: "1h" }
+  );
+  const secureLink = `${url}/leave-action/:token=${token}`;
+
+  await transporter.sendMail({
+    from: `<${email}>`,
+    to: mail,
+    subject: `Leave Application from ${name}`,
+    html: `<p><strong>Leave Type:</strong> ${leave_type}</p>
 <p><strong>From:</strong> ${from_date}</p>
 <p><strong>To:</strong> ${to_date}</p>
 <p><strong>Days:</strong> ${days}</p>
 <p><strong>Leave Application:</strong><br/> ${leave_application}</p>
-<p><a href="${messageLink}" target="_blank">👉 View Leave Message</a></p>`,
-      });
-    }
+<p><a href="${secureLink}" target="_blank">👉 Approve/Reject Leave Request</a></p>`,
+  });
+}
 
     startReminderCron();
 
