@@ -19,6 +19,7 @@ const emailRouter = require("./routes/email");
 const leaveRouter = require("./routes/leave_balance");
 const leaveUpdateRouter = require("./routes/receive_leave");
 const settingRouter = require("./routes/customTheme");
+const leaveLimitRouter =require("./routes/leaveLimit")
 const { DB_URL } = require("./config");
 const employeeRouter= require("./routes/employeeAociation")
 const upload = require("./service/multer");
@@ -34,6 +35,7 @@ mongoose
   .connect(DB_URL)
   .then(() => {
     console.log("Connection Successfully");
+    require("./crons/leaveLimitReset.js"); 
   })
   .catch((err) => {
     console.log("Received an Error:", err.message);
@@ -70,6 +72,7 @@ app.use("/send_email", emailRouter);
 app.use("/users", usersRouter);
 app.use("/employee_leave_detail", leaveRouter);
 app.use("/inbox_messages", leaveUpdateRouter);
+app.use("/leaveLimit",leaveLimitRouter);
 app.use("/association", employeeRouter);
 app.use("/:employee_id", usersRouter);
 app.use("/:employee_id", leaveRouter);

@@ -15,6 +15,7 @@ async function sendLeaveReply(leaveMessage, employee_id) {
     from_date,
     leave_id: _id,
   } = leaveMessage;
+  const transporter = await emailConnection();
 
   try {
     if (status === "HR Approved" || status === "Admin Approved") {

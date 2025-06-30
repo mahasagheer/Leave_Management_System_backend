@@ -66,6 +66,9 @@ const UserSchema = new mongoose.Schema(
       required: true,
       unique: true,
     },
+    
+    staff_type: { type: String, required: true, enum: ["probation", "intern", "permanent"] },
+
     associatedEmployees: [
       {
         type: mongoose.Schema.Types.ObjectId,

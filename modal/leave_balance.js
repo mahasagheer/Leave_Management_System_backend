@@ -7,19 +7,19 @@ const LeaveSchema = new mongoose.Schema(
       required: true,
       unique: true,
     },
-    
-    annual_leave: {
+
+    used_paid_leaves: {
       type: Number,
-      required: true,
-      max: 18,
-      min: 3,
+      default: 0,
+      min: 0,
     },
-    sick_leave: {
+
+    used_unpaid_leaves: {
       type: Number,
-      required: true,
-      max: 18,
-      min: 3,
+      default: 0,
+      min: 0,
     },
+   
     rejected_leave: {
       type: Number,
       default: 0,
@@ -36,6 +36,10 @@ const LeaveSchema = new mongoose.Schema(
       min: 0,
       max: 18,
     },
+     leave_year: {
+      type: Number,
+      default: new Date().getFullYear(), // to track yearly resets
+    }
   },
   { timestamps: true }
 );

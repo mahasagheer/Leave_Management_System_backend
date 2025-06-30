@@ -6,6 +6,7 @@ const Leave = require("../modal/leave_balance");
 const EmployeeLeaves = require("../modal/receive_leaves");
 const key = "sikfm%$90is";
 
+
 const { encrypt_key } = require("../config");
 const { sendInviteEmail } = require("./email");
 
@@ -25,6 +26,7 @@ async function addUser(req, res) {
       password,
       role,
       phone,
+      staff_type
     } = req.body;
     let existingUser = await User.findOne({ email: email });
     if (existingUser) {
@@ -48,7 +50,7 @@ async function addUser(req, res) {
       email,
       password: encrypted,
       role,
-      phone,
+      phone,staff_type
     });
 
     try {
@@ -112,22 +114,40 @@ async function updateUser(req, res) {
       city,
       email,
       password,
+      staff_type,
     } = req.body;
-    const encrypted = crypto.AES.encrypt(password, encrypt_key).toString();
 
-    const update = await User.findByIdAndUpdate(req.params.id, req.body, {
+    const updateData = {
+      ...(name && { name }),
+      ...(salary && { salary }),
+      ...(age && { age }),
+      ...(exit_date && { exit_date }),
+      ...(Job_title && { Job_title }),
+      ...(gender && { gender }),
+      ...(hire_date && { hire_date }),
+      ...(department && { department }),
+      ...(city && { city }),
+      ...(email && { email }),
+      ...(staff_type && { staff_type }),
+    };
+
+    if (password) {
+      const encrypted = crypto.AES.encrypt(password, encrypt_key).toString();
+      updateData.password = encrypted;
+    }
+
+    const updatedUser = await User.findByIdAndUpdate(req.params.id, updateData, {
       new: true,
     });
-    if (!update) {
-      return res.status(404).json({
-        msg: "Unable to update user",
-      });
+
+    if (!updatedUser) {
+      return res.status(404).json({ msg: "Unable to update user" });
     }
-    return res.status(200).json(update);
-  } catch {
-    res.status(404).json({
-      msg: "Unable to update",
-    });
+
+    res.status(200).json(updatedUser);
+  } catch (error) {
+    console.error("Update Error:", error);
+    res.status(500).json({ msg: "Unable to update" });
   }
 }
 

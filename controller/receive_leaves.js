@@ -5,6 +5,7 @@ const puppeteer = require("puppeteer");
 const hbs = require("handlebars");
 const fs = require("fs-extra");
 const path = require("path");
+const mongoose = require('mongoose');
 
 async function AddEmployeeLeaveDetail(req, res) {
   try {
@@ -24,38 +25,7 @@ async function AddEmployeeLeaveDetail(req, res) {
   }
 }
 
-// async function updateLeaveDetail(req, res) {
-//   try {
-//     const { employee_id, message } = req.body;
 
-//     let updateEmployee = await EmployeeLeaves.updateOne(
-//       { employee_id: employee_id },
-//       {
-//         $push: { messages: { ...message, viewed: false } },
-//         $set: { "notification.employee": true },
-//       },
-//       { new: true, useFindAndModify: false }
-//     );
-//     const leave = await Leave.updateOne(
-//       { employee_id: employee_id },
-//       { $inc: { pending_leave: 1 } }
-//     );
-//     console.log(updateEmployee)
-//     if (!updateEmployee) {
-//       return res.status(404).json({ message: "Leave record not found" });
-//     }
-
-//     return res.status(200).json(updateEmployee);
-//   } catch (err) {
-//     console.error("Error updating leave detail:", err);
-//     res.status(500).json({
-//       msg: "Unable to update",
-//     });
-//   }
-// }
-
-
-const mongoose = require('mongoose');
 
 async function updateLeaveDetail(req, res) {
   try {
