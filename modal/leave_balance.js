@@ -30,11 +30,13 @@ const LeaveSchema = new mongoose.Schema(
       default: 0,
       min: 0,
     },
-    remaining_leave: {
+    remaining_paid_leave: {
       type: Number,
       default: 0,
-      min: 0,
-      max: 18,
+    },
+    remaining_unpaid_leave: {
+      type: Number,
+      default: 0,
     },
      leave_year: {
       type: Number,

@@ -1,4 +1,3 @@
-const Leave = require("../modal/leave_balance");
 const EmployeeLeaves = require("../modal/receive_leaves");
 const User = require("../modal/user");
 const mongoose = require("mongoose");

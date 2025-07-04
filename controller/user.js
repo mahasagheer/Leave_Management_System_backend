@@ -112,11 +112,12 @@ async function updateUser(req, res) {
       hire_date,
       department,
       city,
+      role,
       email,
       password,
       staff_type,
     } = req.body;
-
+console.log()
     const updateData = {
       ...(name && { name }),
       ...(salary && { salary }),
@@ -129,6 +130,7 @@ async function updateUser(req, res) {
       ...(city && { city }),
       ...(email && { email }),
       ...(staff_type && { staff_type }),
+      ...(role && { role }),
     };
 
     if (password) {

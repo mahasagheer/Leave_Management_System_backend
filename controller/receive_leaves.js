@@ -6,6 +6,8 @@ const hbs = require("handlebars");
 const fs = require("fs-extra");
 const path = require("path");
 const mongoose = require('mongoose');
+const LeaveLimit = require("../modal/leave_limit"); // adjust path as needed
+
 
 async function AddEmployeeLeaveDetail(req, res) {
   try {
@@ -27,19 +29,66 @@ async function AddEmployeeLeaveDetail(req, res) {
 
 
 
+
 async function updateLeaveDetail(req, res) {
   try {
     const { employee_id, message } = req.body;
 
-    // Add _id manually so we can return it later
+    // Step 1: Fetch user to get staff_type
+    const user = await User.findById(employee_id);
+    if (!user || !user.staff_type) {
+      return res.status(400).json({ message: "Invalid user or staff type missing" });
+    }
+
+    const currentYear = new Date().getFullYear();
+
+    // Step 2: Fetch leave limit for staff_type and year
+    const leaveLimit = await LeaveLimit.findOne({
+      staff_type: user.staff_type,
+      applicable_year: currentYear,
+    });
+
+    if (!leaveLimit) {
+      return res.status(404).json({ message: "Leave limit not set for staff type" });
+    }
+
+    // Step 3: Fetch current leave usage
+    const leaveRecord = await Leave.findOne({
+      employee_id,
+      leave_year: currentYear,
+    });
+
+    if (!leaveRecord) {
+      return res.status(404).json({ message: "Leave balance record not found" });
+    }
+
+    // Step 4: Check leave type and compare with limits
+    const leaveType = message.leave_type?.toLowerCase();
+    const requestedDays = Number(message.days || 1);
+
+    if (leaveType === "paid") {
+      const totalUsed = leaveRecord.used_paid_leaves + leaveRecord.pending_leave + requestedDays;
+      if (totalUsed > leaveLimit.paid_leave_limit) {
+        return res.status(400).json({ message: "Paid leave limit exceeded" });
+      }
+    } else if (leaveType === "unpaid") {
+      const totalUsed = leaveRecord.used_unpaid_leaves + leaveRecord.pending_leave + requestedDays;
+      if (totalUsed > leaveLimit.unpaid_leave_limit) {
+        return res.status(400).json({ message: "Unpaid leave limit exceeded" });
+      }
+    } else {
+      return res.status(400).json({ message: "Invalid or missing leave type" });
+    }
+
+    // Step 5: Proceed to push message in EmployeeLeaves
     const messageWithId = {
       _id: new mongoose.Types.ObjectId(),
       ...message,
       viewed: false,
     };
 
-    let updateEmployee = await EmployeeLeaves.updateOne(
-      { employee_id: employee_id },
+    const updateEmployee = await EmployeeLeaves.updateOne(
+      { employee_id },
       {
         $push: { messages: messageWithId },
         $set: { "notification.employee": true },
@@ -47,26 +96,27 @@ async function updateLeaveDetail(req, res) {
       { new: true, useFindAndModify: false }
     );
 
+    // Step 6: Increment pending leave in Leave record
     await Leave.updateOne(
-      { employee_id: employee_id },
+      { employee_id },
       { $inc: { pending_leave: 1 } }
     );
 
     if (!updateEmployee || updateEmployee.modifiedCount === 0) {
-      return res.status(404).json({ message: "Leave record not found" });
+      return res.status(404).json({ message: "Unable to update employee messages" });
     }
 
     return res.status(200).json({
       message: "Leave updated successfully",
       message: messageWithId,
     });
+
   } catch (err) {
     console.error("Error updating leave detail:", err);
-    res.status(500).json({
-      msg: "Unable to update",
-    });
+    return res.status(500).json({ msg: "Unable to update leave record" });
   }
 }
+
 
 
 

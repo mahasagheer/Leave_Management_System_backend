@@ -19,7 +19,7 @@ async function sendLeave(req, res) {
       to_date,
       from_date,
       leave_application,
-      _id
+      _id,
     } = req.body;
 
     const transporter = await emailConnection();
@@ -41,27 +41,25 @@ async function sendLeave(req, res) {
     if (!sender) {
       return res.status(404).json({ msg: "Sender not found in system" });
     }
+
     const senderId = sender._id;
     let recipientEmails = [];
 
     if (sender.role === "user") {
-      // Step 2: Find the exact manager linked to this user
+      // Step 2: Always add admins
+      const admins = await User.find({ role: "admin" });
+      recipientEmails.push(...admins.map((a) => a.email));
+
+      // Try to find manager associated with user
       const manager = await User.findOne({
         role: "Manager",
         associatedEmployees: senderId,
       });
 
-      if (!manager) {
-        return res.status(404).json({
-          msg: "No manager associated with this employee",
-        });
+      // If found, add manager to recipient list
+      if (manager) {
+        recipientEmails.push(manager.email);
       }
-
-      recipientEmails.push(manager.email);
-
-      // Optional: Also send to admin
-      const admins = await User.find({ role: "admin" });
-      recipientEmails.push(...admins.map((a) => a.email));
     }
 
     else if (sender.role === "Manager") {
@@ -81,57 +79,40 @@ async function sendLeave(req, res) {
         .status(403)
         .json({ msg: "You are not allowed to send leave request" });
     }
-// const messageLink = `${url}/inbox_messages/${_id}`
-    // Step 3: Send emails
-//     for (const mail of recipientEmails) {
-//       await transporter.sendMail({
-//         from: `<${email}>`,
-//         to: mail,
-//         subject: `Leave Application from ${name}`,
-//         text: `Leave Type: ${leave_type}
-// From: ${from_date}
-// To: ${to_date}
-// Days: ${days}
-// Leave Application: ${leave_application}
 
-// View this leave message here: ${messageLink}`,
-//         html: `<p><strong>Leave Type:</strong> ${leave_type}</p>
-// <p><strong>From:</strong> ${from_date}</p>
-// <p><strong>To:</strong> ${to_date}</p>
-// <p><strong>Days:</strong> ${days}</p>
-// <p><strong>Leave Application:</strong><br/> ${leave_application}</p>
-// <p><a href="${messageLink}" target="_blank">👉 View Leave Message</a></p>`,
-//       });
-//     }
+    // Send email to all recipients
+    for (const mail of recipientEmails) {
+      const role = await User.findOne({ email: mail }).then(
+        (u) => u?.role || "unknown"
+      );
+      const token = jwt.sign(
+        {
+          leaveId: _id,
+          approverEmail: mail,
+          approverRole: role,
+          action: "approve-reject",
+        },
+        secret_key,
+        { expiresIn: "1h" }
+      );
+      const secureLink = `${url}/leave-action/${token}`;
 
-for (const mail of recipientEmails) {
-  const role = await User.findOne({ email: mail }).then((u) => u?.role || "unknown");
-  const token = jwt.sign(
-    {
-      leaveId: _id,
-      approverEmail: mail,
-      approverRole: role,
-      action: "approve-reject"
-    },
-    secret_key,
-    { expiresIn: "1h" }
-  );
-  const secureLink = `${url}/leave-action/${token}`;
+      await transporter.sendMail({
+        from: `<${email}>`,
+        to: mail,
+        subject: `Leave Application from ${name}`,
+        html: `
+          <p><strong>Leave Type:</strong> ${leave_type}</p>
+          <p><strong>From:</strong> ${from_date}</p>
+          <p><strong>To:</strong> ${to_date}</p>
+          <p><strong>Days:</strong> ${days}</p>
+          <p><strong>Leave Application:</strong><br/> ${leave_application}</p>
+          <p><a href="${secureLink}" target="_blank">👉 Approve/Reject Leave Request</a></p>
+        `,
+      });
+    }
 
-  await transporter.sendMail({
-    from: `<${email}>`,
-    to: mail,
-    subject: `Leave Application from ${name}`,
-    html: `<p><strong>Leave Type:</strong> ${leave_type}</p>
-<p><strong>From:</strong> ${from_date}</p>
-<p><strong>To:</strong> ${to_date}</p>
-<p><strong>Days:</strong> ${days}</p>
-<p><strong>Leave Application:</strong><br/> ${leave_application}</p>
-<p><a href="${secureLink}" target="_blank">👉 Approve/Reject Leave Request</a></p>`,
-  });
-}
-
-    startReminderCron();
+    startReminderCron(); // assuming it’s defined elsewhere
 
     res.status(200).json({ msg: "Leave sent successfully" });
   } catch (err) {
@@ -368,7 +349,6 @@ async function updateMsgStatus(req, res) {
 
 
 async function managerApproveLeave(req, res) {
-  console.log("header",req.header)
   const { employee_id, message_id , comment} = req.body;
   if (!employee_id || !message_id) {
     return res.status(400).json({ message: "Missing required fields" });
@@ -394,8 +374,8 @@ async function managerApproveLeave(req, res) {
     leaveDoc.messages[msgIndex].status = "Manager Approved";
     leaveDoc.messages[msgIndex].comment= comment;
     leaveDoc.notification.employee = true;
-    await leaveDoc.save();
     await sendLeaveReply(leaveMessage,employee_id);
+    await leaveDoc.save();
     res.status(200).json({ message: "Leave approved by Manager " });
   } catch (err) {
     console.error("Manager Approval Error:", err);
@@ -405,7 +385,6 @@ async function managerApproveLeave(req, res) {
 
 
 async function hrApproveLeave(req, res) {
-  console.log("header",req.header)
   const { employee_id, message_id , comment} = req.body;
   if (!employee_id || !message_id) {
     return res.status(400).json({ message: "Missing required fields" });
@@ -441,17 +420,10 @@ async function hrApproveLeave(req, res) {
     leaveDoc.messages[msgIndex].status = "HR Approved";
     leaveDoc.messages[msgIndex].comment= comment;
     leaveDoc.notification.employee = true;
+    await sendLeaveReply(leaveMessage,employee_id);
+
     await leaveDoc.save();
 
-    // Step 3: Deduct 1 from annual leave
-    if (leaveMessage.leave_type === "Annual") {
-      await Leave.updateOne(
-        { employee_id },
-        { $inc: { remaining_leave : -1 } }
-      );
-    }
-
-    await sendLeaveReply(leaveMessage,employee_id);
     res.status(200).json({ message: "Leave approved by HR & Annual Leaves updated" });
   } catch (err) {
     console.error("HR Approval Error:", err);
@@ -485,26 +457,14 @@ async function AdminApproveLeave(req, res) {
     }
     const leaveMessage = leaveDoc.messages[msgIndex];
 
-    // if( getUser.role ==="user" ){
-    // if (leaveMessage.status !== "Manager Approved" ) {
-    //   return res.status(400).json({ message: "Not approved by manager yet" });
-    // } 
-    // }
-
     // Step 2: Update message status
     leaveDoc.messages[msgIndex].status = "Admin Approved";
     leaveDoc.messages[msgIndex].comment= comment;
     leaveDoc.notification.employee = true;
-    await leaveDoc.save();
     await sendLeaveReply(leaveMessage,employee_id);
 
-    // Step 3: Deduct 1 from annual leave
-    if (leaveMessage.leave_type === "Annual") {
-      await Leave.updateOne(
-        { employee_id },
-        { $inc: { remaining_leave : -1 } }
-      );
-    }
+    await leaveDoc.save();
+
 
     res.status(200).json({ message: "Leave approved by Admin & Annual Leaves updated" });
   } catch (err) {
@@ -547,9 +507,9 @@ async function managerRejectLeave(req, res) {
     leaveDoc.messages[msgIndex].status = "Rejected by Manager";
      leaveDoc.messages[msgIndex].comment= comment;
     leaveDoc.notification.employee = true;
+    await sendLeaveReply(leaveMessage,employee_id);
 
     await leaveDoc.save();
-    await sendLeaveReply(leaveMessage,employee_id);
 
     res.status(200).json({ message: "Leave rejected by Manager" });
   } catch (err) {
@@ -597,8 +557,9 @@ if(getUser.role ==="user" )
     // }
     leaveDoc.notification.employee = true;
     leaveDoc.messages[msgIndex].comment= comment;
-    await leaveDoc.save();
     await sendLeaveReply(leaveMessage,employee_id);
+
+    await leaveDoc.save();
 
     res.status(200).json({ message: "Leave rejected by HR" });
   } catch (err) {
@@ -644,8 +605,9 @@ async function AdminRejectLeave(req, res) {
     // }
     leaveDoc.notification.employee = true;
     leaveDoc.messages[msgIndex].comment= comment;
-    await leaveDoc.save();
     await sendLeaveReply(leaveMessage,employee_id);
+
+    await leaveDoc.save();
 
     res.status(200).json({ message: "Leave rejected by Admin" });
   } catch (err) {

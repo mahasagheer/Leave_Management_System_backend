@@ -2,6 +2,8 @@
 const Leave = require("../modal/leave_balance");
 const EmployeeLeaves = require("../modal/receive_leaves");
 const { emailConnection } = require("../connection");
+const { user_email } = require("../config");
+const User=require("../modal/user")
 
 async function sendLeaveReply(leaveMessage, employee_id) {
   const {
@@ -13,7 +15,7 @@ async function sendLeaveReply(leaveMessage, employee_id) {
     leave_type,
     to_date,
     from_date,
-    leave_id: _id,
+_id,
   } = leaveMessage;
   const transporter = await emailConnection();
 
@@ -22,7 +24,7 @@ async function sendLeaveReply(leaveMessage, employee_id) {
       const user = await EmployeeLeaves.findOne(
         {
           employee_id: employee_id,
-          "messages._id": leave_id,
+          "messages._id": _id,
         },
         {
           "messages.$": 1,
@@ -31,67 +33,74 @@ async function sendLeaveReply(leaveMessage, employee_id) {
 
       const leaveType = leave_type || "";
 
-      if (leaveType === "Sick Leave") {
+      if (leaveType === "unpaid-leave") {
         await Leave.updateOne(
           { employee_id: employee_id },
           {
             $inc: {
               pending_leave: -1,
-              sick_leave: -days,
+              used_unpaid_leaves: -days,
+              remaining_unpaid_leave: -days,
             },
           }
         );
-      } else {
+        sendMail(email, name, comment, status);
+      } else if(leave_type === "paid-leave") {
         await Leave.updateOne(
           { employee_id: employee_id },
           {
             $inc: {
-              remaining_leave: -days,
-              pending_leave: -1,
+              remaining_paid_leave: -days,
+              used_paid_leaves: -1,
             },
           }
         );
       }
-    } else if (status === "HR Rejected" || status === "Admin Rejected") {
+      sendMail(email, name, comment, status);
+
+    } else if (status === "HR Rejected" || status === "Admin Rejected" || status ==="Manager Rejected") {
       await Leave.updateOne(
         { employee_id: employee_id },
         {
           $inc: {
             pending_leave: -1,
-            rejected_leave: 1,
+            rejected_leave: +1,
           },
         }
       );
-    }
-    sendMail(email, name, comment, status);
-    if (status === "Manager Approved") {
+      sendMail(email, name, comment, status);
+    }else if (status === "Manager Approved") {
       // Step 1: Find all users with role 'HR'
       const HRs = await User.find({ role: "HR" });
       const HR_Emails = HRs.map((hr) => hr.email);
-
-      // Step 2: Send email to each HR
       for (const mail of HR_Emails) {
-        await transporter.sendMail({
-          from: `<${user_email}>`,
-          to: mail,
-          subject: `Leave Awaiting HR Approval`,
-          text: `Dear HR Team,
-      
-      This is to inform you that the leave request submitted by ${name} has been approved by the Manager and is now pending your review.
-      
-      Leave Details:
-      - Type: ${leave_type}
-      - From: ${from_date}
-      - To: ${to_date}
-      - Days: ${days}
-      - Applicant Email: ${email}
-      
-      Kindly log in to the system to review and take necessary action.
-      
-      Best Regards,  
-      Codace Solutions`,
-        });
-      }
+
+      const token = jwt.sign(
+        {
+          leaveId: _id,
+          approverEmail: mail,
+          approverRole: role,
+          action: "approve-reject",
+        },
+        secret_key,
+        { expiresIn: "1h" }
+      );
+      const secureLink = `${url}/leave-action/${token}`;
+
+      await transporter.sendMail({
+        from: `<${email}>`,
+        to: mail,
+        subject: `Leave Application from ${name}`,
+        html: `
+          <p><strong>Leave Type:</strong> ${leave_type}</p>
+          <p><strong>From:</strong> ${from_date}</p>
+          <p><strong>To:</strong> ${to_date}</p>
+          <p><strong>Days:</strong> ${days}</p>
+          <p><strong>Leave Application:</strong><br/> ${leave_application}</p>
+          <p><a href="${secureLink}" target="_blank">👉 Approve/Reject Leave Request</a></p>
+        `,
+      });
+    }     
     }
 
     return { success: true, message: "Leave reply sent successfully." };
@@ -111,11 +120,7 @@ async function sendMail(email, name, comment, status) {
     let approvalMessage = "";
     let subjectLine = "";
 
-    if (status === "Manager Approved") {
-      approvalMessage =
-        "Your leave has been approved by the Manager and is now pending HR approval.";
-      subjectLine = "Leave Status: Manager Approved (Pending HR)";
-    } else if (status === "HR Approved" || status === "Admin Approved") {
+    if (status === "HR Approved" || status === "Admin Approved") {
       approvalMessage =
         "Your leave request has been fully approved. You are now free to take the requested days off.";
       subjectLine = "Leave Status: Fully Approved ✅";
@@ -139,7 +144,7 @@ async function sendMail(email, name, comment, status) {
     });
   } else if (
     status === "HR Rejected" ||
-    status === "Admin Rejected" 
+    status === "Admin Rejected" || status === "Mananger Rejected"
   ) {
     let rejectionBy = "";
 
